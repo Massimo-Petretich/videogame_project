@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>game project</title>
+		<style>
+			body {
+				margin: 0;
+				overflow: hidden;
+				background: 'black';
+				color: red;
+				font-family: Arial, Helvetica, sans-serif;
+			}
+			canvas {
+				display: block;
+                background-color: 'black'
+			}
+			#game-info {
+				position: absolute;
+				top: 1em;
+				left: 1em;
+				padding: 0.5em;
+				border-radius: 0.3em;
+			}
+			#key-info {
+				position: absolute;
+				top: calc(1em + 2.5em); /* top of #game-info + height of #game-info + spacing */
+				left: 1em;
+				padding: 0.5em;
+				border-radius: 0.3em;
+			}
+		</style>
+		<script defer src="graphics_elements_classes_except_character.js"></script>
+		<script defer src="character_class.js"></script>
+		<script defer src="extract_canvas.js"></script>
+		<script defer src="handle_keys.js"></script>
+		<script defer src="draw.js"></script>
+	</head>
+
+	<body>
+		<par>
+			<div id="game-info">
+				a: left; d: right; w: jump. Arrows (up/down/left/right) unlocked if thrusters pack is collected.
+			</div>
+		</par>
+		<par>
+			<div id="key-info">Press any key</div>
+		</par>
+		<canvas id="canvas2D"></canvas>
+	</body>
+</html>
