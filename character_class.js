@@ -107,12 +107,12 @@ class Character {
 		if (keys.isJumping && this.canJump) {
 			let jumpHeight = floors.y - (this.y + this.height);
 			if (jumpHeight <= params.jumpHeight) {
-				let jumpRemainder = params.jumpHeight - jumpHeight
+				let jumpRemainder = params.jumpHeight - jumpHeight;
 				if (jumpRemainder > params.speedUp) {
 					this.y -= params.speedUp;
 					this.yOrientation = "up";
 				} else {
-					this.y -=jumpRemainder
+					this.y -= jumpRemainder;
 					this.canJump = false;
 					this.yOrientation = "down";
 				}
@@ -129,7 +129,6 @@ class Character {
 	}
 
 	draw(position) {
-		// Rect.create(this.x, this.y, this.width, this.height, 'red').draw()
 		switch (position) {
 			case "facingForward":
 				this.drawFacingForward();
@@ -156,19 +155,18 @@ class Character {
 				console.error("Invalid position");
 		}
 	}
-
-	drawTopBodyFacingForward() {
-		if (this.hasThrustersPack)
-			Rect.create(
-				this.xMid - 0.5 * this.backpackWidth,
-				this.yThrustersPack,
-				this.backpackWidth,
-				this.backpackHeight,
-				this.backpackColor,
-				this.borderColor,
-				this.borderWidth
-			).draw();
-		// Draw body
+	drawForwardThrustersPack() {
+		Rect.create(
+			this.xMid - 0.5 * this.backpackWidth,
+			this.yThrustersPack,
+			this.backpackWidth,
+			this.backpackHeight,
+			this.backpackColor,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawForwardBody() {
 		Rect.create(
 			this.xMid - 0.5 * this.bodyWidth,
 			this.yBody,
@@ -178,7 +176,8 @@ class Character {
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		// draw blue dot
+	}
+	drawForwardBlueDot() {
 		context.fillStyle = "blue";
 		context.beginPath();
 		context.arc(
@@ -190,8 +189,10 @@ class Character {
 			true
 		);
 		context.fill();
-		context.stroke();
-		// Draw head
+	}
+	drawForwardHead() {
+		context.fillStyle = this.color;
+		context.strokeStyle = this.borderColor;
 		context.beginPath();
 		context.arc(
 			this.xMid,
@@ -201,22 +202,23 @@ class Character {
 			Math.PI * 2,
 			true
 		);
-		context.fillStyle = this.color;
 		context.fill();
 		context.stroke();
-		// Draw helmet visor
-		context.fillStyle=this.borderColor
+	}
+	drawForwardHelmetVisor() {
+		context.fillStyle = this.borderColor;
 		context.beginPath();
 		context.arc(
 			this.xMid,
 			this.yHeadCenter,
-			0.8*this.headRadius,
-			-0.2*Math.PI,
-			-0.8*Math.PI,
+			0.8 * this.headRadius,
+			-0.2 * Math.PI,
+			-0.8 * Math.PI,
 			false
 		);
 		context.fill();
-		// Draw left arm
+	}
+	drawForwardLeftArm() {
 		Rect.create(
 			this.xMid - 0.5 * this.bodyWidth - this.limbWidth,
 			this.yArm,
@@ -226,7 +228,8 @@ class Character {
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		// Draw right arm
+	}
+	drawForwardRightArm() {
 		Rect.create(
 			this.xMid + 0.5 * this.bodyWidth,
 			this.yArm,
@@ -236,7 +239,8 @@ class Character {
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		// draw hands
+	}
+	drawForwardLeftForearm() {
 		Rect.create(
 			this.xMid - 0.5 * this.bodyWidth - this.limbWidth,
 			this.yArm + 0.5 * this.limbHeight,
@@ -246,6 +250,8 @@ class Character {
 			this.borderColor,
 			this.borderWidth
 		).draw();
+	}
+	drawForwardRightForearm() {
 		Rect.create(
 			this.xMid + 0.5 * this.bodyWidth,
 			this.yArm + 0.5 * this.limbHeight,
@@ -256,38 +262,7 @@ class Character {
 			this.borderWidth
 		).draw();
 	}
-
-	drawFacingForward() {
-		// Draw left leg
-		Rect.create(
-			this.xMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
-			this.yBody + this.bodyHeight,
-			this.limbWidth,
-			this.limbHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		// Draw right leg
-		Rect.create(
-			this.xMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
-			this.yBody + this.bodyHeight,
-			this.limbWidth,
-			this.limbHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		// Draw shoes
-		Rect.create(
-			this.xMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
-			this.y + this.height * 0.9,
-			this.limbWidth,
-			this.shoeHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
+	drawForwardRightForeleg() {
 		Rect.create(
 			this.xMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
 			this.y + this.height * 0.9,
@@ -297,21 +272,41 @@ class Character {
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		this.drawTopBodyFacingForward();
 	}
-
-	drawJumpingFacingForward() {
-		// Draw left leg
+	drawForwardLeftForeleg() {
 		Rect.create(
 			this.xMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
-			this.yBody + this.bodyHeight,
+			this.y + this.height * 0.9,
 			this.limbWidth,
-			0.5 * this.limbHeight,
+			this.shoeHeight,
 			this.color,
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		// Draw right leg
+	}
+	drawForwardRightLeg() {
+		Rect.create(
+			this.xMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
+			this.yBody + this.bodyHeight,
+			this.limbWidth,
+			this.limbHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawForwardLeftLeg() {
+		Rect.create(
+			this.xMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
+			this.yBody + this.bodyHeight,
+			this.limbWidth,
+			this.limbHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawForwardJumpRightLeg() {
 		Rect.create(
 			this.xMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
 			this.yBody + this.bodyHeight,
@@ -320,45 +315,55 @@ class Character {
 			this.color,
 			this.borderColor,
 			this.borderWidth
-		).draw();
-		this.drawTopBodyFacingForward();
-	}
-
-	drawTopBodyRigth() {
-		if (this.hasThrustersPack)
-			Rect.create(
-				this.xMid - 0.5 * this.bodyWidth - this.backpackDepth,
-				this.yThrustersPack,
-				this.backpackDepth,
-				this.backpackHeight,
-				this.backpackColor,
-				this.borderColor,
-				this.borderWidth
 			).draw();
-		// Draw body
+		}
+	drawForwardJumpLeftLeg() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth,
-			this.yBody,
-			this.bodyWidth,
-			this.bodyHeight,
+			this.xMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
+			this.yBody + this.bodyHeight,
+			this.limbWidth,
+			0.5 * this.limbHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+			).draw();
+		}
+	drawTopBodyFacingForward() {
+		if (this.hasThrustersPack) this.drawForwardThrustersPack();
+		this.drawForwardBody();
+		this.drawForwardBlueDot();
+		this.drawForwardHead();
+		this.drawForwardHelmetVisor();
+		this.drawForwardLeftArm();
+		this.drawForwardRightArm();
+		this.drawForwardLeftForearm();
+		this.drawForwardRightForearm();
+	}
+	drawFacingForward() {
+		this.drawForwardLeftLeg();
+		this.drawForwardRightLeg();
+		this.drawForwardLeftForeleg();
+		this.drawForwardRightForeleg();
+		this.drawTopBodyFacingForward();
+	}
+	drawJumpingFacingForward() {
+		this.drawForwardJumpLeftLeg();
+		this.drawForwardJumpRightLeg();
+		this.drawTopBodyFacingForward();
+	}
+			
+	drawRightRightArm() {
+		Rect.create(
+			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.yArm,
+			this.limbWidth,
+			this.limbHeight,
 			this.color,
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		// Draw head
-		context.beginPath();
-		context.arc(
-			this.xMid,
-			this.yHeadCenter,
-			this.headRadius,
-			0,
-			Math.PI * 2,
-			true
-		);
-		context.fillStyle = this.color;
-		context.fill();
-		context.stroke();
-		// Draw helmet visor (seen from the side)
+	}
+	drawRightHelmetVisor() {
 		context.beginPath();
 		context.arc(
 			this.xMid + 0.3 * this.headRadius,
@@ -371,92 +376,8 @@ class Character {
 		context.fillStyle = this.borderColor;
 		context.fill();
 		context.stroke();
-		// Draw right arm
-		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
-			this.yArm,
-			this.limbWidth,
-			this.limbHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		// draw hands
-		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
-			this.yArm + 0.5 * this.limbHeight,
-			this.limbWidth,
-			0.35 * this.limbHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
 	}
-
-	drawWalkingRight() {
-		// Draw legs
-		Rect.create(
-			this.xMid - this.limbWidth,
-			this.yBody + this.bodyHeight,
-			this.limbWidth,
-			this.limbHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		Rect.create(
-			this.xMid,
-			this.yBody + this.bodyHeight,
-			this.limbWidth,
-			this.limbHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		// draw shoes
-		Rect.create(
-			this.xMid,
-			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
-			1.5 * this.limbWidth,
-			0.15 * this.limbHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		Rect.create(
-			this.xMid - this.limbWidth,
-			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
-			1.5 * this.limbWidth,
-			0.15 * this.limbHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		this.drawTopBodyRigth();
-	}
-
-	drawTopBodyLeft() {
-		if (this.hasThrustersPack)
-			Rect.create(
-				this.xMid + 0.5 * this.bodyWidth,
-				this.yThrustersPack,
-				this.backpackDepth,
-				this.backpackHeight,
-				this.backpackColor,
-				this.borderColor,
-				this.borderWidth
-			).draw();
-		// Draw body
-		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth,
-			this.yBody,
-			this.bodyWidth,
-			this.bodyHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		// Draw head
+	drawRightHead() {
 		context.beginPath();
 		context.arc(
 			this.xMid,
@@ -469,30 +390,30 @@ class Character {
 		context.fillStyle = this.color;
 		context.fill();
 		context.stroke();
-		// Draw helmet visor (seen from the side)
-		context.beginPath();
-		context.arc(
-			this.xMid - 0.3 * this.headRadius,
-			this.yHeadCenter,
-			0.7 * this.headRadius,
-			-Math.PI * 0.2,
-			-Math.PI * 0.8,
-			false
-		);
-		context.fillStyle = this.borderColor;
-		context.fill();
-		context.stroke();
-		// Draw left arm
+	}
+	drawRightBody() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
-			this.yArm,
-			this.limbWidth,
-			this.limbHeight,
+			this.xMid - 0.5 * this.bodyWidth,
+			this.yBody,
+			this.bodyWidth,
+			this.bodyHeight,
 			this.color,
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		// draw hands
+	}
+	drawRightThrustersPack() {
+		Rect.create(
+			this.xMid - 0.5 * this.bodyWidth - this.backpackDepth,
+			this.yThrustersPack,
+			this.backpackDepth,
+			this.backpackHeight,
+			this.backpackColor,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawRightRightForearm() {
 		Rect.create(
 			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
 			this.yArm + 0.5 * this.limbHeight,
@@ -503,9 +424,40 @@ class Character {
 			this.borderWidth
 		).draw();
 	}
-
-	drawWalkingLeft() {
-		// Draw legs
+	drawRightBackShoe() {
+		Rect.create(
+			this.xMid - this.limbWidth,
+			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
+			1.5 * this.limbWidth,
+			0.15 * this.limbHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawRightForwardShoe() {
+		Rect.create(
+			this.xMid,
+			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
+			1.5 * this.limbWidth,
+			0.15 * this.limbHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawRightForwardLeg() {
+		Rect.create(
+			this.xMid,
+			this.yBody + this.bodyHeight,
+			this.limbWidth,
+			this.limbHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawRightBackLeg() {
 		Rect.create(
 			this.xMid - this.limbWidth,
 			this.yBody + this.bodyHeight,
@@ -515,25 +467,123 @@ class Character {
 			this.borderColor,
 			this.borderWidth
 		).draw();
+	}
+	drawRightJumpingBottomLeg() {
 		Rect.create(
-			this.xMid,
+			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.yBody + this.bodyHeight + this.limbWidth,
+			0.7 * this.limbHeight,
+			this.limbWidth,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+			).draw();
+		}
+	drawRightJumpingTopLeg() {
+		Rect.create(
+			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
 			this.yBody + this.bodyHeight,
+			0.7 * this.limbHeight,
+			this.limbWidth,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+			).draw();
+		}
+	drawTopBodyRigth() {
+		if (this.hasThrustersPack) this.drawRightThrustersPack();
+		this.drawRightBody();
+		this.drawRightHead();
+		this.drawRightHelmetVisor();
+		this.drawRightRightArm();
+		this.drawRightRightForearm();
+	}
+	drawWalkingRight() {
+		this.drawRightBackLeg();
+		this.drawRightForwardLeg();
+		this.drawRightForwardShoe();
+		this.drawRightBackShoe();
+		this.drawTopBodyRigth();
+	}
+	drawJumpingRight() {
+		this.drawRightJumpingTopLeg();
+		this.drawRightJumpingBottomLeg();
+		this.drawTopBodyRigth();
+	}
+
+	drawLeftLeftForearm() {
+		Rect.create(
+			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.yArm + 0.5 * this.limbHeight,
+			this.limbWidth,
+			0.35 * this.limbHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawLeftLeftArm() {
+		Rect.create(
+			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.yArm,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
 			this.borderColor,
 			this.borderWidth
 		).draw();
+	}
+	drawLeftHelmetVisor() {
+		context.fillStyle = this.borderColor;
+		context.beginPath();
+		context.arc(
+			this.xMid - 0.3 * this.headRadius,
+			this.yHeadCenter,
+			0.7 * this.headRadius,
+			-Math.PI * 0.2,
+			-Math.PI * 0.8,
+			false
+		);
+		context.fill();
+	}
+	drawLeftHead() {
+		context.fillStyle = this.color;
+		context.strokeStyle = this.borderColor;
+		context.beginPath();
+		context.arc(
+			this.xMid,
+			this.yHeadCenter,
+			this.headRadius,
+			0,
+			Math.PI * 2,
+			true
+		);
+		context.fill();
+		context.stroke();
+	}
+	drawLeftBody() {
 		Rect.create(
-			this.xMid - 0.5 * this.limbWidth,
-			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
-			1.5 * this.limbWidth,
-			0.15 * this.limbHeight,
+			this.xMid - 0.5 * this.bodyWidth,
+			this.yBody,
+			this.bodyWidth,
+			this.bodyHeight,
 			this.color,
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		// draw shoe
+	}
+	drawLeftThrustersPack() {
+		Rect.create(
+			this.xMid + 0.5 * this.bodyWidth,
+			this.yThrustersPack,
+			this.backpackDepth,
+			this.backpackHeight,
+			this.backpackColor,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawLeftBackShoe() {
 		Rect.create(
 			this.xMid - 1.5 * this.limbWidth,
 			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
@@ -543,137 +593,90 @@ class Character {
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		this.drawTopBodyLeft();
 	}
-
-	drawJumpingRight() {
-		// Draw left leg (protruding forward)
+	drawLeftForwardShoe() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
-			this.yBody + this.bodyHeight,
-			0.7 * this.limbHeight,
-			this.limbWidth,
+			this.xMid - 0.5 * this.limbWidth,
+			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
+			1.5 * this.limbWidth,
+			0.15 * this.limbHeight,
 			this.color,
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
-			this.yBody + this.bodyHeight + this.limbWidth,
-			0.7 * this.limbHeight,
-			this.limbWidth,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		this.drawTopBodyRigth();
 	}
-
-	drawJumpingLeft() {
-		Rect.create(
-			this.xMid -
-				0.5 * this.bodyWidth +
-				this.limbWidth -
-				0.35 * this.limbHeight,
-			this.yBody + this.bodyHeight,
-			0.7 * this.limbHeight,
-			this.limbWidth,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		Rect.create(
-			this.xMid -
-				0.5 * this.bodyWidth +
-				this.limbWidth -
-				0.35 * this.limbHeight,
-			this.yBody + this.bodyHeight + this.limbWidth,
-			0.7 * this.limbHeight,
-			this.limbWidth,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		this.drawTopBodyLeft();
-	}
-
-	drawBroken() {
-		if (this.hasThrustersPack)
-			Rect.create(
-				this.xMid - 0.5 * this.backpackWidth,
-				this.y + this.height - this.backpackHeight,
-				this.backpackWidth,
-				this.backpackHeight,
-				this.backpackColor,
-				this.borderColor,
-				this.borderWidth
-			).draw();
-		// Draw body
-		Rect.create(
-			this.x,
-			this.y + this.height - this.bodyHeight,
-			this.bodyWidth,
-			this.bodyHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		// Draw head
-		context.beginPath();
-		context.arc(
-			this.x + this.width,
-			this.y + this.height - this.headRadius,
-			this.headRadius,
-			0,
-			Math.PI * 2,
-			true
-		);
-		context.fillStyle = "white";
-		context.fill();
-		context.stroke();
-
-		// Draw helmet visor with semicircles
-		Rect.create(
-			this.x + this.width - 0.7 * this.headRadius,
-			this.y + this.height - 1.4 * this.headRadius,
-			1.4 * this.headRadius,
-			1.4 * this.headRadius,
-			this.borderColor,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-		// Draw left arm
-		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth - this.limbWidth,
-			this.y + this.height - this.limbWidth,
-			this.limbHeight,
-			this.limbWidth,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-
-		// Draw right arm
+	drawLeftLeftBackLeg() {
 		Rect.create(
 			this.xMid,
-			this.y + this.height - this.limbWidth,
-			this.limbHeight,
+			this.yBody + this.bodyHeight,
 			this.limbWidth,
+			this.limbHeight,
 			this.color,
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		// Draw left leg
+	}
+	drawLeftForwardLeg() {
 		Rect.create(
-			this.x + this.width,
-			this.y + this.height - this.limbWidth,
+			this.xMid - this.limbWidth,
+			this.yBody + this.bodyHeight,
+			this.limbWidth,
 			this.limbHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawLeftJumpingTopLeg() {
+		Rect.create(
+			this.xMid -
+			0.5 * this.bodyWidth +
+			this.limbWidth -
+			0.35 * this.limbHeight,
+			this.yBody + this.bodyHeight + this.limbWidth,
+			0.7 * this.limbHeight,
 			this.limbWidth,
 			this.color,
 			this.borderColor,
 			this.borderWidth
 		).draw();
-		// Draw right leg
+	}
+	drawLeftJumpingBottomLeg() {
+		Rect.create(
+			this.xMid -
+				0.5 * this.bodyWidth +
+				this.limbWidth -
+				0.35 * this.limbHeight,
+			this.yBody + this.bodyHeight,
+			0.7 * this.limbHeight,
+			this.limbWidth,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawTopBodyLeft() {
+		if (this.hasThrustersPack) this.drawLeftThrustersPack();
+		this.drawLeftBody();
+		this.drawLeftHead();
+		this.drawLeftHelmetVisor();
+		this.drawLeftLeftArm();
+		this.drawLeftLeftForearm();
+	}
+	drawWalkingLeft() {
+		this.drawLeftForwardLeg();
+		this.drawLeftLeftBackLeg();
+		this.drawLeftForwardShoe();
+		this.drawLeftBackShoe();
+		this.drawTopBodyLeft();
+	}
+	drawJumpingLeft() {
+		this.drawLeftJumpingBottomLeg();
+		this.drawLeftJumpingTopLeg();
+		this.drawTopBodyLeft();
+	}
+
+	drawBrokenRightLeg() {
 		Rect.create(
 			this.xMid,
 			this.y + this.height - this.limbHeight,
@@ -683,5 +686,96 @@ class Character {
 			this.borderColor,
 			this.borderWidth
 		).draw();
+	}
+	drawBrokenLeftLeg() {
+		Rect.create(
+			this.x + this.width,
+			this.y + this.height - this.limbWidth,
+			this.limbHeight,
+			this.limbWidth,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawBrokenRightArm() {
+		Rect.create(
+			this.xMid,
+			this.y + this.height - this.limbWidth,
+			this.limbHeight,
+			this.limbWidth,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawBrokenLeftArm() {
+		Rect.create(
+			this.xMid - 0.5 * this.bodyWidth - this.limbWidth,
+			this.y + this.height - this.limbWidth,
+			this.limbHeight,
+			this.limbWidth,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawBrokenHelmetVisor() {
+		Rect.create(
+			this.x + this.width - 0.7 * this.headRadius,
+			this.y + this.height - 1.4 * this.headRadius,
+			1.4 * this.headRadius,
+			1.4 * this.headRadius,
+			this.borderColor,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawBrokenHead() {
+		context.fillStyle = this.color;
+		context.strokeStyle = this.borderColor;
+		context.beginPath();
+		context.arc(
+			this.x + this.width,
+			this.y + this.height - this.headRadius,
+			this.headRadius,
+			0,
+			Math.PI * 2,
+			true
+		);
+		context.fill();
+		context.stroke();
+	}
+	drawBrokenBody() {
+		Rect.create(
+			this.x,
+			this.y + this.height - this.bodyHeight,
+			this.bodyWidth,
+			this.bodyHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawBrokenThrustersPack() {
+		Rect.create(
+			this.xMid - 0.5 * this.backpackWidth,
+			this.y + this.height - this.backpackHeight,
+			this.backpackWidth,
+			this.backpackHeight,
+			this.backpackColor,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawBroken() {
+		if (this.hasThrustersPack) this.drawBrokenThrustersPack();
+		this.drawBrokenBody();
+		this.drawBrokenHead();
+		this.drawBrokenHelmetVisor();
+		this.drawBrokenLeftArm();
+		this.drawBrokenRightArm();
+		this.drawBrokenLeftLeg();
+		this.drawBrokenRightLeg();
 	}
 }

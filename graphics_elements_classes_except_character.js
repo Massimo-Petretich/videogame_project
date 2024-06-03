@@ -218,8 +218,8 @@ class Floors {
 		this.holes.map((hole) => hole.updatePosition());
 	}
 	draw() {
-		for (let idx=0; idx<this.floors.length; idx++) {
-			this.floors[idx].draw()
+		for (let idx = 0; idx < this.floors.length; idx++) {
+			this.floors[idx].draw();
 		}
 		// this.floors.map((floor) => floor.draw());
 	}
@@ -385,34 +385,7 @@ class Tree extends GraphicElement {
 	get xMid() {
 		return this.x + 0.5 * this.width;
 	}
-	draw() {
-		// draw stem
-		Rect.create(
-			this.xMid - 0.05 * this.width,
-			this.y + this.canopyHeight,
-			0.1 * this.width,
-			this.height - this.canopyHeight,
-			this.stemColor,
-			this.borderColor
-		).draw();
-		// draw pot
-		context.fillStyle = this.potColor;
-		context.strokeStyle = this.borderColor;
-		context.beginPath();
-		context.moveTo(
-			this.xMid - 0.5 * this.potWidth,
-			this.y + this.height - this.potHeight
-		);
-		context.lineTo(
-			this.xMid + 0.5 * this.potWidth,
-			this.y + this.height - this.potHeight
-		);
-		context.lineTo(this.xMid + 0.4 * this.potWidth, this.y + this.height);
-		context.lineTo(this.xMid - 0.4 * this.potWidth, this.y + this.height);
-		context.closePath();
-		context.fill();
-		context.stroke();
-		// draw canopy
+	drawCanopy() {
 		context.fillStyle = this.canopyColor;
 		context.beginPath();
 		context.arc(
@@ -445,6 +418,39 @@ class Tree extends GraphicElement {
 		);
 		context.closePath();
 		context.fill();
+	}
+	drawPot() {
+		context.fillStyle = this.potColor;
+		context.strokeStyle = this.borderColor;
+		context.beginPath();
+		context.moveTo(
+			this.xMid - 0.5 * this.potWidth,
+			this.y + this.height - this.potHeight
+		);
+		context.lineTo(
+			this.xMid + 0.5 * this.potWidth,
+			this.y + this.height - this.potHeight
+		);
+		context.lineTo(this.xMid + 0.4 * this.potWidth, this.y + this.height);
+		context.lineTo(this.xMid - 0.4 * this.potWidth, this.y + this.height);
+		context.closePath();
+		context.fill();
+		context.stroke();
+	}
+	drawStem() {
+		Rect.create(
+			this.xMid - 0.05 * this.width,
+			this.y + this.canopyHeight,
+			0.1 * this.width,
+			this.height - this.canopyHeight,
+			this.stemColor,
+			this.borderColor
+		).draw();
+	}
+	draw() {
+		this.drawStem();
+		this.drawPot();
+		this.drawCanopy();
 	}
 	static create(...args) {
 		return new this(...args);
@@ -502,7 +508,7 @@ class ThrustersPack extends Rect {
 		this.pocketHeight = height * 0.3;
 		this.pocketY = y + height - this.pocketHeight;
 	}
-	drawSpecificElements() {
+	drawFlap() {
 		Rect.create(
 			this.x,
 			this.y - this.flapHeight,
@@ -512,17 +518,8 @@ class ThrustersPack extends Rect {
 			this.borderColor,
 			this.borderWidth
 		).draw();
-
-		Rect.create(
-			this.x + this.width * 0.1,
-			this.pocketY,
-			this.pocketWidth,
-			this.pocketHeight,
-			this.color,
-			this.borderColor,
-			this.borderWidth
-		).draw();
-
+	}
+	drawPocket2() {
 		Rect.create(
 			this.x + this.width * 0.3,
 			this.pocketY,
@@ -533,7 +530,22 @@ class ThrustersPack extends Rect {
 			this.borderWidth
 		).draw();
 	}
-
+	drawPocket() {
+		Rect.create(
+			this.x + this.width * 0.1,
+			this.pocketY,
+			this.pocketWidth,
+			this.pocketHeight,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawSpecificElements() {
+		this.drawFlap();
+		this.drawPocket();
+		this.drawPocket2();
+	}
 	draw() {
 		super.draw();
 		this.drawSpecificElements();
@@ -541,52 +553,76 @@ class ThrustersPack extends Rect {
 }
 
 class OxygenPack extends GraphicElement {
-	constructor(x, y, width, height, color, borderColor, borderWidth = 0) {
+	constructor(x, y, width, height, color, borderColor, borderWidth = 0, jittering=0.002) {
 		super(x, y);
 		this.width = width;
 		this.height = height;
 		this.color = color;
 		this.borderColor = borderColor;
 		this.borderWidth = borderWidth;
+		this.jittering = jittering
+		this.radius = 0.5 * this.width;
 	}
-
-	draw() {
+	drawMiddle() {
+		Rect.create(
+			this.x,
+			this.y,
+			this.width,
+			this.height,
+			this.color,
+			this.borderColor,
+			this.borderWidth
+		).draw();
+	}
+	drawTopCircle() {
 		context.fillStyle = this.color;
 		context.strokeStyle = this.borderColor;
 		context.lineWidth = this.borderWidth;
-
-		// Draw the main tank body
-		context.fillRect(this.x, this.y, this.width, this.height);
-		if (this.borderWidth > 0) {
-			context.strokeRect(this.x, this.y, this.width, this.height);
-		}
-		// Draw the tank top
-		const topRadius = this.width / 2;
 		context.beginPath();
-		context.arc(this.x + this.width / 2, this.y, topRadius, Math.PI, 0);
+		context.arc(this.x + 0.5 * this.width, this.y, this.radius, Math.PI, 0);
 		context.closePath();
 		context.fill();
 		context.stroke();
-		// Draw the tank bottom
+	}
+	drawBottomCircle() {
+		context.fillStyle = this.color;
+		context.strokeStyle = this.borderColor;
+		context.lineWidth = this.borderWidth;
 		context.beginPath();
 		context.arc(
 			this.x + this.width / 2,
 			this.y + this.height,
-			topRadius,
+			this.radius,
 			0,
 			Math.PI
 		);
 		context.closePath();
 		context.fill();
 		context.stroke();
-
+	}
+	addText() {
 		context.textAlign = "center";
-		context.fillStyle = "red";
+		context.fillStyle = params.textColor;
 		context.fillText(
 			"O2",
 			this.x + 0.5 * this.width,
 			this.y + 0.5 * this.height
 		);
+	}
+	draw() {
+		this.drawMiddle();
+		this.drawTopCircle();
+		this.drawBottomCircle();
+		this.addText();
+	}
+	jitterPosition() {
+		// -0.6 in the y axis makes the item drift slightly upwards with time. 
+		this.x += this.jittering* canvas.width * (Math.random() - 0.5) 
+		this.y += this.jittering* canvas.width * (Math.random() - 0.6) 
+	}
+	updatePosition() {
+		super.updatePosition()
+		this.jitterPosition()
 	}
 }
 
@@ -613,19 +649,19 @@ class Mountain extends GraphicElement {
 		this.drawTriangle(
 			this.x + 0.2 * this.width,
 			this.y + 0.05 * this.height,
-			this.x + 0.4*this.width,
+			this.x + 0.4 * this.width,
 			this.y + this.height,
 			this.x,
 			this.y + this.height
-		)
+		);
 		this.drawTriangle(
 			this.x + 0.3 * this.width,
 			this.y,
-			this.x + 0.6*this.width,
+			this.x + 0.6 * this.width,
 			this.y + this.height,
 			this.x,
 			this.y + this.height
-		)
+		);
 		this.drawTriangle(
 			this.x + 0.7 * this.width,
 			this.y + 0.15 * this.height,
@@ -633,23 +669,23 @@ class Mountain extends GraphicElement {
 			this.y + this.height,
 			this.x + 0.4 * this.width,
 			this.y + this.height
-		)
+		);
 		this.drawTriangle(
 			this.x + 0.5 * this.width,
 			this.y + 0.3 * this.height,
-			this.x + 0.2* this.width,
+			this.x + 0.2 * this.width,
 			this.y + this.height,
 			this.x + 0.8 * this.width,
 			this.y + this.height
-		)
+		);
 		this.drawTriangle(
 			this.x + 0.7 * this.width,
 			this.y + 0.7 * this.height,
-			this.x + 0.4* this.width,
+			this.x + 0.4 * this.width,
 			this.y + this.height,
 			this.x + 1 * this.width,
 			this.y + this.height
-		)
+		);
 	}
 }
 
@@ -667,6 +703,6 @@ class Planet extends GraphicElement {
 	}
 	updatePosition() {
 		super.updatePosition();
-		this.x += 0.1 * params.speedHorizontal;
+		this.x += 0.05 * params.speedHorizontal;
 	}
 }

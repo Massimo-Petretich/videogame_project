@@ -6,6 +6,7 @@ const params = {
 	get gameCanvasWidth() {
 		return this.gameCanvases * canvas.width;
 	},
+	textColor: window.getComputedStyle(document.body).color,
 	// character
 	characterColor: "#FFFFFF",
 	characterBorderColor: "#000000",
@@ -56,7 +57,7 @@ const params = {
 	cloudsColor: "#FFFFFF",
 	// trees
 	get treesHeight() {
-		return 0.4 * Math.min(canvas.width, this.floorYProp * canvas.height);
+		return 0.3 * Math.min(canvas.width, this.floorYProp * canvas.height);
 	},
 	get treesWidth() {
 		return 0.6 * this.treesHeight;
@@ -109,17 +110,33 @@ let keys = {
 	isThrusterDown: false,
 	isThrusterLeft: false,
 	isThrusterRight: false,
+	isInfo: false,
+	isClearInfo: false
 };
 
 let gameSession = {
-	isGameOver: false,
+	gameState: 'running',
+	showInfo() {
+		this.gameState = 'help'
+		const infoString = 'Mission --> collect the Oxygen pack; Keys --> c: clear this message; a: left, d: right; w: jump. Arrows (up/down/left/right) unlocked if thrusters pack is collected.'
+		const element = document.getElementById("game-info")
+		element.textContent = infoString
+	},
+	removeInfo() {
+		this.gameState = 'running'
+		document.getElementById("game-info").textContent = 'h: Help'
+	},
 	resetKeys() {
 		return Object.keys(keys).forEach((key) => (keys[key] = false));
 	},
 	callGameOver() {
 		this.resetKeys();
-		this.isGameOver = true;
+		this.gameState = 'game over';
 		document.getElementById("game-info").textContent = "GAME OVER";
+	},
+	callMissionAccomplished() {
+		this.gameState = 'mission accomplished';
+		document.getElementById("game-info").textContent = "MISSION ACCOMPLISHED";
 	},
 	updateDrawCollectable(collectable, characterAttr) {
 		collectable.updatePosition();
@@ -246,9 +263,16 @@ function drawCanvas() {
 
 	character.updatePosition();
 
-	if (character.isWithinXHoles() && character.isBelowFloor()) {
+	if (keys.isInfo && gameSession.gameState !== 'help') 
+		gameSession.showInfo()
+	if (keys.isClearInfo && gameSession.gameState === 'help') 
+		gameSession.removeInfo()
+	
+	if (character.isWithinXHoles() && character.isBelowFloor())
 		gameSession.callGameOver();
-	}
+	if (character.hasOxygenPack) 
+		gameSession.callMissionAccomplished()
+
 	if (character.touchesCanvasBottom()) {
 		character.draw("broken");
 		clearInterval(gameSession.intervalId);

@@ -18,14 +18,14 @@
 			}
 			#game-info {
 				position: absolute;
-				top: 1em;
+				top: calc(1em + 2.5em); /* top of #game-info + height of #game-info + spacing */
 				left: 1em;
 				padding: 0.5em;
 				border-radius: 0.3em;
 			}
 			#key-info {
 				position: absolute;
-				top: calc(1em + 2.5em); /* top of #game-info + height of #game-info + spacing */
+				top: 1em;
 				left: 1em;
 				padding: 0.5em;
 				border-radius: 0.3em;
@@ -40,12 +40,12 @@
 
 	<body>
 		<par>
-			<div id="game-info">
-				a: left; d: right; w: jump. Arrows (up/down/left/right) unlocked if thrusters pack is collected.
-			</div>
+			<div id="key-info">Press any key</div>
 		</par>
 		<par>
-			<div id="key-info">Press any key</div>
+			<div id="game-info">
+				h: Help
+			</div>
 		</par>
 		<canvas id="canvas2D"></canvas>
 	</body>
