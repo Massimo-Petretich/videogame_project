@@ -3,18 +3,21 @@ class GraphicElement {
 		this.x = x;
 		this.y = y;
 	}
-	updatePosition() {
-		if (keys.isLeft) this.x += params.speedHorizontal;
-		if (keys.isRight) this.x -= params.speedHorizontal;
-		if (keys.isThrusterRight && character.hasThrustersPack)
-			this.x -= params.speedHorizontal;
-		if (keys.isThrusterLeft && character.hasThrustersPack)
-			this.x += params.speedHorizontal;
+	wrapAroundLeftRight() {
 		if (this.x > 0.5 * params.gameCanvasWidth) {
 			this.x -= params.gameCanvasWidth;
 		} else if (this.x < -0.5 * params.gameCanvasWidth) {
 			this.x += params.gameCanvasWidth;
 		}
+	}
+	updatePosition() {
+		if (keys.isLeft) this.x += params.speedHorizontal;
+		if (keys.isRight) this.x -= params.speedHorizontal;
+		if (keys.isThrusterRight && thrusterPack.isFound)
+			this.x -= params.speedHorizontal;
+		if (keys.isThrusterLeft && thrusterPack.isFound)
+			this.x += params.speedHorizontal;
+		this.wrapAroundLeftRight();
 	}
 }
 
@@ -103,7 +106,11 @@ class Floor extends GraphicElement {
 		this.rects["topSide"].updatePosition();
 		this.rects["frontSide"].updatePosition();
 	}
+	get isOutsideCanvas() {
+		return this.x + this.width < 0 || this.x > canvas.width;
+	}
 	draw() {
+		if (this.isOutsideCanvas) return null;
 		this.rects["topSide"].draw();
 		this.rects["frontSide"].draw();
 	}
@@ -229,18 +236,26 @@ class Floors {
 }
 
 class Star extends GraphicElement {
-	constructor(x, y, radius, starColor) {
+	constructor(x, y, radius, starColor, speed) {
 		super(x, y);
 		this.radius = radius;
 		this.starColor = starColor;
+		this.speed = speed;
 	}
-
+	get isOutsideCanvas() {
+		return this.x < 0 || this.x > canvas.width;
+	}
 	draw() {
+		if (this.isOutsideCanvas) return null;
 		context.fillStyle = this.starColor;
 		context.beginPath();
 		context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
 		context.fill();
 		context.closePath();
+	}
+	updatePosition() {
+		super.updatePosition();
+		this.x += this.speed;
 	}
 	static create(...args) {
 		return new this(...args);
@@ -248,19 +263,20 @@ class Star extends GraphicElement {
 }
 
 class Stars {
-	constructor(canvasWidth, canvasHeight, radius, starColor, nStars) {
+	constructor(canvasWidth, canvasHeight, radius, starColor, nStars, speed) {
 		this.canvasHeight = canvasHeight;
 		this.canvasWidth = canvasWidth;
 		this.nStars = nStars;
 		this.radius = radius;
 		this.starColor = starColor;
+		this.speed = speed;
 		this.stars = this.generateStars();
 	}
 	generateStar() {
 		const x = Math.random() * this.canvasWidth - 0.5 * this.canvasWidth;
 		const y = Math.random() * this.canvasHeight;
 		const radius = Math.random() * this.radius;
-		const star = new Star(x, y, radius, this.starColor);
+		const star = new Star(x, y, radius, this.starColor, this.speed);
 		return star;
 	}
 	generateStars() {
@@ -286,8 +302,13 @@ class Cloud extends GraphicElement {
 		this.size = size;
 		this.color = color;
 	}
-
+	get isOutsideCanvas() {
+		return (
+			this.x + 2 * this.size < 0 || this.x - 2 * this.size > canvas.width
+		);
+	}
 	draw() {
+		if (this.isOutsideCanvas) return null;
 		context.fillStyle = this.color;
 		context.beginPath();
 		context.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
@@ -447,7 +468,11 @@ class Tree extends GraphicElement {
 			this.borderColor
 		).draw();
 	}
+	get isOutsideCanvas() {
+		return this.x + this.width < 0 || this.x > canvas.width;
+	}
 	draw() {
+		if (this.isOutsideCanvas) return null;
 		this.drawStem();
 		this.drawPot();
 		this.drawCanopy();
@@ -506,6 +531,7 @@ class ThrustersPack extends Rect {
 		this.flapHeight = height * 0.2;
 		this.pocketWidth = width * 0.6;
 		this.pocketHeight = height * 0.3;
+		this.isFound = false;
 		this.pocketY = y + height - this.pocketHeight;
 	}
 	drawFlap() {
@@ -547,28 +573,42 @@ class ThrustersPack extends Rect {
 		this.drawPocket2();
 	}
 	draw() {
+		if (this.isFound) return null;
 		super.draw();
 		this.drawSpecificElements();
 	}
 }
 
 class OxygenPack extends GraphicElement {
-	constructor(x, y, width, height, color, borderColor, borderWidth = 0, jittering=0.002) {
+	constructor(
+		x,
+		y,
+		width,
+		height,
+		color,
+		borderColor = color,
+		borderWidth = 0,
+		jittering = 0,
+		speed = 0
+	) {
 		super(x, y);
 		this.width = width;
 		this.height = height;
 		this.color = color;
 		this.borderColor = borderColor;
 		this.borderWidth = borderWidth;
-		this.jittering = jittering
+		this.jittering = jittering;
+		this.isFound = false;
+		this.speedX = speed * Math.sign(Math.random() - 0.5);
+		this.speedY = speed * Math.sign(Math.random() - 0.5);
 		this.radius = 0.5 * this.width;
 	}
 	drawMiddle() {
 		Rect.create(
 			this.x,
-			this.y,
+			this.y + this.radius,
 			this.width,
-			this.height,
+			this.height - 2 * this.radius,
 			this.color,
 			this.borderColor,
 			this.borderWidth
@@ -579,7 +619,13 @@ class OxygenPack extends GraphicElement {
 		context.strokeStyle = this.borderColor;
 		context.lineWidth = this.borderWidth;
 		context.beginPath();
-		context.arc(this.x + 0.5 * this.width, this.y, this.radius, Math.PI, 0);
+		context.arc(
+			this.x + 0.5 * this.width,
+			this.y + this.radius,
+			this.radius,
+			Math.PI,
+			0
+		);
 		context.closePath();
 		context.fill();
 		context.stroke();
@@ -590,8 +636,8 @@ class OxygenPack extends GraphicElement {
 		context.lineWidth = this.borderWidth;
 		context.beginPath();
 		context.arc(
-			this.x + this.width / 2,
-			this.y + this.height,
+			this.x + 0.5*this.width,
+			this.y + this.height - this.radius,
 			this.radius,
 			0,
 			Math.PI
@@ -609,20 +655,102 @@ class OxygenPack extends GraphicElement {
 			this.y + 0.5 * this.height
 		);
 	}
+	get isOutsideCanvas() {
+		return this.x + this.width < 0 || this.x > canvas.width;
+	}
 	draw() {
+		if (this.isOutsideCanvas) return null;
+		if (this.isFound) return null;
 		this.drawMiddle();
 		this.drawTopCircle();
 		this.drawBottomCircle();
 		this.addText();
 	}
 	jitterPosition() {
-		// -0.6 in the y axis makes the item drift slightly upwards with time. 
-		this.x += this.jittering* canvas.width * (Math.random() - 0.5) 
-		this.y += this.jittering* canvas.width * (Math.random() - 0.6) 
+		this.x += this.jittering * (Math.random() - 0.5);
+		this.y += this.jittering * (Math.random() - 0.5);
+	}
+	drift() {
+		this.y += this.speedY;
+		this.x += this.speedX;
+	}
+	wrapGoinDown() {
+		if (this.y > canvas.height && this.speedY > 0)
+			this.y -= canvas.height + this.height;
+	}
+	wrapGoingUp() {
+		if (this.y + this.height < 0 && this.speedY < 0)
+			this.y += canvas.height + this.height;
+	}
+	wrapAroundTopBottom() {
+		this.wrapGoinDown();
+		this.wrapGoingUp();
 	}
 	updatePosition() {
-		super.updatePosition()
-		this.jitterPosition()
+		super.updatePosition();
+		this.jitterPosition();
+		this.drift();
+		this.wrapAroundTopBottom();
+	}
+	static create(...args) {
+		return new this(...args);
+	}
+}
+
+class OxygenPacks {
+	constructor(
+		nPieces,
+		width,
+		height,
+		color,
+		borderColor,
+		borderWidth = 0,
+		jittering = 0,
+		speed = 0
+	) {
+		this.nPieces = nPieces;
+		this.width = width;
+		this.height = height;
+		this.color = color;
+		this.borderWidth = borderWidth;
+		this.borderColor = borderColor;
+		this.jittering = jittering;
+		this.speed = speed;
+		this.oxygenPacks = this.generateOxygenPacks();
+	}
+	get x() {
+		return Math.random() * params.gameCanvasWidth;
+	}
+	get y() {
+		return (Math.random() + 0.5) * 0.5 * params.floorYProp * canvas.height;
+	}
+	generateOxygenPack() {
+		return new OxygenPack(
+			this.x,
+			this.y,
+			this.width,
+			this.height,
+			this.color,
+			this.borderColor,
+			this.borderWidth,
+			this.jittering,
+			this.speed
+		);
+	}
+	generateOxygenPacks() {
+		const oxygenPacks = Array(this.nPieces)
+			.fill(0)
+			.map(this.generateOxygenPack.bind(this));
+		return oxygenPacks;
+	}
+	draw() {
+		this.oxygenPacks.map((oxygenPack) => oxygenPack.draw());
+	}
+	updatePosition() {
+		this.oxygenPacks.map((oxygenPack) => oxygenPack.updatePosition());
+	}
+	static create(...args) {
+		return new this(...args);
 	}
 }
 
@@ -645,7 +773,11 @@ class Mountain extends GraphicElement {
 		context.fill();
 		context.stroke();
 	}
+	get isOutsideCanvas() {
+		return this.x + this.width < 0 || this.x > canvas.width;
+	}
 	draw() {
+		if (this.isOutsideCanvas) return null;
 		this.drawTriangle(
 			this.x + 0.2 * this.width,
 			this.y + 0.05 * this.height,
@@ -690,12 +822,17 @@ class Mountain extends GraphicElement {
 }
 
 class Planet extends GraphicElement {
-	constructor(x, y, radius, color) {
+	constructor(x, y, radius, color, speed) {
 		super(x, y);
 		this.radius = radius;
 		this.color = color;
+		this.speed = speed;
+	}
+	get isOutsideCanvas() {
+		return this.x + this.radius < 0 || this.x - this.radius > canvas.width;
 	}
 	draw() {
+		if (this.isOutsideCanvas) return null;
 		context.fillStyle = this.color;
 		context.beginPath();
 		context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
@@ -703,6 +840,6 @@ class Planet extends GraphicElement {
 	}
 	updatePosition() {
 		super.updatePosition();
-		this.x += 0.05 * params.speedHorizontal;
+		this.x += this.speed;
 	}
 }

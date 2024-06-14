@@ -29,8 +29,6 @@ class Character {
 		this.canJump = true;
 		this.xOrientation = "right";
 		this.yOrientation = "down";
-		this.hasThrustersPack = false;
-		this.hasOxygenPack = false;
 	}
 	get xMid() {
 		return this.x + 0.5 * this.width;
@@ -90,17 +88,17 @@ class Character {
 		if (keys.isRight) {
 			this.xOrientation = "right";
 		}
-		if (keys.isThrusterRight && this.hasThrustersPack) {
+		if (keys.isThrusterRight && thrusterPack.isFound) {
 			this.xOrientation = "right";
 		}
-		if (keys.isThrusterLeft && this.hasThrustersPack) {
+		if (keys.isThrusterLeft && thrusterPack.isFound) {
 			this.xOrientation = "left";
 		}
-		if (keys.isThrusterUp && this.hasThrustersPack) {
+		if (keys.isThrusterUp && thrusterPack.isFound) {
 			this.y -= params.speedUp;
 			this.yOrientation = "up";
 		}
-		if (keys.isThrusterDown && this.hasThrustersPack) {
+		if (keys.isThrusterDown && thrusterPack.isFound) {
 			this.y += params.speedDown;
 			this.yOrientation = "down";
 		}
@@ -329,7 +327,7 @@ class Character {
 			).draw();
 		}
 	drawTopBodyFacingForward() {
-		if (this.hasThrustersPack) this.drawForwardThrustersPack();
+		if (thrusterPack.isFound) this.drawForwardThrustersPack();
 		this.drawForwardBody();
 		this.drawForwardBlueDot();
 		this.drawForwardHead();
@@ -491,7 +489,7 @@ class Character {
 			).draw();
 		}
 	drawTopBodyRigth() {
-		if (this.hasThrustersPack) this.drawRightThrustersPack();
+		if (thrusterPack.isFound) this.drawRightThrustersPack();
 		this.drawRightBody();
 		this.drawRightHead();
 		this.drawRightHelmetVisor();
@@ -656,7 +654,7 @@ class Character {
 		).draw();
 	}
 	drawTopBodyLeft() {
-		if (this.hasThrustersPack) this.drawLeftThrustersPack();
+		if (thrusterPack.isFound) this.drawLeftThrustersPack();
 		this.drawLeftBody();
 		this.drawLeftHead();
 		this.drawLeftHelmetVisor();
@@ -769,7 +767,7 @@ class Character {
 		).draw();
 	}
 	drawBroken() {
-		if (this.hasThrustersPack) this.drawBrokenThrustersPack();
+		if (thrusterPack.isFound) this.drawBrokenThrustersPack();
 		this.drawBrokenBody();
 		this.drawBrokenHead();
 		this.drawBrokenHelmetVisor();

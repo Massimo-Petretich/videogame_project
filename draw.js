@@ -20,19 +20,14 @@ const params = {
 	thrusterPackWidth: 0.06 * Math.min(canvas.height, canvas.width),
 	thrusterPacHeight: 0.09 * Math.min(canvas.height, canvas.width),
 	// oxygen pack
-	oxygenPackYProp: 0.2,
-	oxygenPackXProp: 0.5,
-	oxygenPackXWidth: 0.03 * Math.min(canvas.height, canvas.width),
-	oxygenPackXHeight: 0.06 * Math.min(canvas.height, canvas.width),
-	get oxygenPackY() {
-		return this.oxygenPackYProp * canvas.height;
-	},
-	get oxygenPackX() {
-		return this.oxygenPackXProp * canvas.width;
-	},
-	oxygenPackColor: "#FFFFFF",
-	oxygenPackBorderColor: "#0000",
-	oxygenPackBorderWidth: 0.01 * Math.min(canvas.height, canvas.width),
+	oxygenPacksNpieces: 6,
+	oxygenPacksXWidth: 0.03 * Math.min(canvas.height, canvas.width),
+	oxygenPacksXHeight: 0.08 * Math.min(canvas.height, canvas.width),
+	oxygenPacksColor: "#FFFFFF",
+	oxygenPacksBorderColor: "#FFFFFF",
+	oxygenPacksBorderWidth: 0 * Math.min(canvas.height, canvas.width),
+	oxygenPacksSpeed: 0.001 * Math.min(canvas.height, canvas.width),
+	oxygenPacksJittering: 0 * Math.min(canvas.height, canvas.width),
 	// floor
 	floorNPieces: 9,
 	floorWidthProp: 0.7,
@@ -49,6 +44,9 @@ const params = {
 	},
 	starsSize: 0.003 * Math.min(canvas.height, canvas.width),
 	starsColor: "#FFFFFF",
+	get starsSpeed() {
+		return -0.02 * this.speedHorizontal;
+	},
 	// clouds
 	get nClouds() {
 		return 3 * this.gameCanvases;
@@ -76,7 +74,10 @@ const params = {
 	planetColor: "#CCCCCC",
 	planetSize: 0.05 * Math.min(canvas.height, canvas.width),
 	planetBorderColor: "#EEEEEE",
-	// movement
+	get planetSpeed() {
+		return 0.05 * this.speedHorizontal;
+	},
+	// character movement
 	get speedGravity() {
 		return 0.04 * this.floorYProp * canvas.height;
 	},
@@ -89,7 +90,7 @@ const params = {
 	},
 	speedHorizontal: 0.04 * canvas.width,
 	get jumpHeight() {
-		const incrementSlack = 1.5;
+		const incrementSlack = 2;
 		const holesXWidthProp = 1 - this.floorWidthProp;
 		const holesSize =
 			(this.gameCanvasWidth * holesXWidthProp) / this.floorNPieces;
@@ -111,43 +112,49 @@ let keys = {
 	isThrusterLeft: false,
 	isThrusterRight: false,
 	isInfo: false,
-	isClearInfo: false
+	isClearInfo: false,
 };
 
 let gameSession = {
-	gameState: 'running',
+	gameState: "running",
 	showInfo() {
-		this.gameState = 'help'
-		const infoString = 'Mission --> collect the Oxygen pack; Keys --> c: clear this message; a: left, d: right; w: jump. Arrows (up/down/left/right) unlocked if thrusters pack is collected.'
-		const element = document.getElementById("game-info")
-		element.textContent = infoString
+		this.gameState = "help";
+		const infoString =
+			"Mission --> collect the Oxygen pack; Keys --> c: clear this message; a: left, d: right; w: jump. Arrows (up/down/left/right) unlocked if thrusters pack is collected.";
+		const element = document.getElementById("game-info");
+		element.textContent = infoString;
 	},
 	removeInfo() {
-		this.gameState = 'running'
-		document.getElementById("game-info").textContent = 'h: Help'
+		this.gameState = "running";
+		document.getElementById("game-info").textContent = "h: Help";
 	},
 	resetKeys() {
 		return Object.keys(keys).forEach((key) => (keys[key] = false));
 	},
 	callGameOver() {
 		this.resetKeys();
-		this.gameState = 'game over';
-		document.getElementById("game-info").textContent = "GAME OVER";
+		this.gameState = "game over";
+		document.getElementById("game-info").textContent = this.gameState;
 	},
 	callMissionAccomplished() {
-		this.gameState = 'mission accomplished';
-		document.getElementById("game-info").textContent = "MISSION ACCOMPLISHED";
+		this.gameState = "mission accomplished";
+		document.getElementById("game-info").textContent = this.gameState;
 	},
-	updateDrawCollectable(collectable, characterAttr) {
+	updateDrawCollectable(collectable) {
 		collectable.updatePosition();
-		if (character[characterAttr]) return null;
+		if (collectable.isFound) return null;
 		const dist = character.centerDist(collectable.x, collectable.y);
 		const collectableSize = Math.max(collectable.width, collectable.height);
 		collectable.draw();
 		if (dist > collectableSize) return null;
-		const infoStr = collectable.constructor.name + " pack collected";
-		character[characterAttr] = true;
-		document.getElementById("game-info").textContent = infoStr;
+		collectable.isFound = true;
+		// const infoStr = collectable.constructor.name + " pack collected";
+		// document.getElementById("game-info").textContent = infoStr;
+	},
+	restoreCanvas() {
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		context.fillStyle = params.background;
+		context.fillRect(0, 0, canvas.width, canvas.height);
 	},
 };
 
@@ -170,7 +177,8 @@ const stars = new Stars(
 	canvas.height,
 	params.starsSize,
 	params.starsColor,
-	params.nStars
+	params.nStars,
+	params.starsSpeed
 );
 
 const clouds = new Clouds(
@@ -179,17 +187,6 @@ const clouds = new Clouds(
 	params.cloudsSize,
 	params.cloudsColor,
 	params.nClouds
-);
-
-const character = new Character(
-	0.5 * canvas.width - 0.5 * params.characterWidth,
-	floors.y - params.characterHeight,
-	params.characterWidth,
-	params.characterHeight,
-	params.characterColor,
-	params.characterBorderColor,
-	params.characterBorderWidth,
-	params.characterBackpackColor
 );
 
 thrusterPack = new ThrustersPack(
@@ -204,14 +201,15 @@ thrusterPack = new ThrustersPack(
 	params.characterBorderWidth
 );
 
-const oxygenPack = new OxygenPack(
-	params.oxygenPackX,
-	params.oxygenPackY,
-	params.oxygenPackXWidth,
-	params.oxygenPackXHeight,
-	params.oxygenPackColor,
-	params.oxygenPackBorderColor,
-	params.oxygenPackBorderWidth
+const oxygenPacks = new OxygenPacks(
+	params.oxygenPacksNpieces,
+	params.oxygenPacksXWidth,
+	params.oxygenPacksXHeight,
+	params.oxygenPacksColor,
+	params.oxygenPacksBorderColor,
+	params.oxygenPacksBorderWidth,
+	params.oxygenPacksJittering,
+	params.oxygenPacksSpeed
 );
 
 let trees = new Trees(
@@ -224,10 +222,10 @@ let trees = new Trees(
 );
 
 let mountain = new Mountain(
-	floors.floors[Math.round(params.floorNPieces / 2)].x +
-		0.1 * floors.floors[Math.round(params.floorNPieces / 2)].width,
+	floors.floors[Math.round(0.5 * params.floorNPieces)].x +
+		0.1 * floors.floors[Math.round(0.5 * params.floorNPieces)].width,
 	floors.y - params.mountainHeight,
-	0.8 * floors.floors[Math.round(params.floorNPieces / 2)].width,
+	0.8 * floors.floors[Math.round(0.5 * params.floorNPieces)].width,
 	params.mountainHeight,
 	params.mountainColor,
 	params.mountainBorderColor
@@ -237,14 +235,24 @@ let planet = new Planet(
 	Math.random() * canvas.width,
 	Math.random() * params.floorYProp * canvas.height,
 	params.planetSize,
-	params.planetColor
+	params.planetColor,
+	params.planetSpeed
 );
 
-function drawCanvas() {
-	context.clearRect(0, 0, canvas.width, canvas.height);
+const character = new Character(
+	0.5 * canvas.width - 0.5 * params.characterWidth,
+	floors.y - params.characterHeight,
+	params.characterWidth,
+	params.characterHeight,
+	params.characterColor,
+	params.characterBorderColor,
+	params.characterBorderWidth,
+	params.characterBackpackColor
+);
 
-	context.fillStyle = params.background;
-	context.fillRect(0, 0, canvas.width, canvas.height);
+function drawCanvas(init) {
+	gameSession.restoreCanvas();
+	
 	stars.updatePosition();
 	stars.draw();
 	planet.updatePosition();
@@ -258,20 +266,20 @@ function drawCanvas() {
 	mountain.updatePosition();
 	mountain.draw();
 
-	gameSession.updateDrawCollectable(thrusterPack, "hasThrustersPack");
-	gameSession.updateDrawCollectable(oxygenPack, "hasOxygenPack");
+	gameSession.updateDrawCollectable(thrusterPack);
+	oxygenPacks.oxygenPacks.map((oxygenPack) =>
+		gameSession.updateDrawCollectable(oxygenPack)
+	);
 
 	character.updatePosition();
 
-	if (keys.isInfo && gameSession.gameState !== 'help') 
-		gameSession.showInfo()
-	if (keys.isClearInfo && gameSession.gameState === 'help') 
-		gameSession.removeInfo()
-	
+	if (keys.isInfo && gameSession.gameState !== "help") gameSession.showInfo();
+	if (keys.isClearInfo && gameSession.gameState === "help")
+		gameSession.removeInfo();
+
 	if (character.isWithinXHoles() && character.isBelowFloor())
 		gameSession.callGameOver();
-	if (character.hasOxygenPack) 
-		gameSession.callMissionAccomplished()
+	if (character.hasOxygenPack) gameSession.callMissionAccomplished();
 
 	if (character.touchesCanvasBottom()) {
 		character.draw("broken");
@@ -282,12 +290,12 @@ function drawCanvas() {
 		character.draw("walkingLeft");
 	} else if (
 		(character.yOrientation == "up" && keys.isLeft) ||
-		(character.hasThrustersPack && keys.isThrusterLeft)
+		(thrusterPack.isFound && keys.isThrusterLeft)
 	) {
 		character.draw("jumpingLeft");
 	} else if (
 		(character.yOrientation == "up" && keys.isRight) ||
-		(character.hasThrustersPack && keys.isThrusterRight)
+		(thrusterPack.isFound && keys.isThrusterRight)
 	) {
 		character.draw("jumpingRight");
 	} else if (character.touchesFloor()) {

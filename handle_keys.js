@@ -1,5 +1,5 @@
 const handleKey = (event, status) => {
-	if (gameSession.gameState === 'game over') { //isGameOver defined in draw.js
+	if (gameSession.gameState === 'game over') { 
 		return null
 	}
 	const element = document.getElementById("key-info");
@@ -41,7 +41,3 @@ const handleKey = (event, status) => {
 
 document.addEventListener("keyup", (event) => handleKey(event, false));
 document.addEventListener("keydown", (event) => handleKey(event, true));
-
-
-// const getKey = () => document.getElementById("key-info").dataset.key
-// const getKeyCode = () => document.getElementById("key-info").dataset.code
