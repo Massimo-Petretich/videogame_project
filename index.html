@@ -8,22 +8,13 @@
 			body {
 				margin: 0;
 				overflow: hidden;
-				background: 'black';
-				color: red;
 				font-family: Arial, Helvetica, sans-serif;
 			}
 			canvas {
 				display: block;
-                background-color: 'black'
+				background-color: "black";
 			}
 			#game-info {
-				position: absolute;
-				top: calc(1em + 2.5em); /* top of #game-info + height of #game-info + spacing */
-				left: 1em;
-				padding: 0.5em;
-				border-radius: 0.3em;
-			}
-			#key-info {
 				position: absolute;
 				top: 1em;
 				left: 1em;
@@ -31,21 +22,31 @@
 				border-radius: 0.3em;
 			}
 		</style>
-		<script defer src="graphics_elements_classes_except_character.js"></script>
+		<script
+			defer
+			src="graphics_elements_classes_except_character.js"
+		></script>
 		<script defer src="character_class.js"></script>
 		<script defer src="extract_canvas.js"></script>
 		<script defer src="handle_keys.js"></script>
+		<script defer src="configs.js"></script>
+		<script defer src="initialize_graphics_elements.js"></script>
 		<script defer src="draw.js"></script>
 	</head>
 
 	<body>
-		<par>
-			<div id="key-info">Press any key</div>
-		</par>
-		<par>
-			<div id="game-info">
-				h: Help
+		<par id="game-info">
+			<div
+				id="help-info"
+				data-helpKeyText="h: Help"
+				data-helpText="Mission: collect the Oxygen pack<br>-----<br>Keys<br>c: clear this message<br>a: left<br>d: right<br>w: jump<br>Arrows unlocked if thrusters pack is collected.<br>-----"
+			>
+			h: Help
 			</div>
+			<div id="key-info">
+			</div>
+			<div id="collectable-info">
+			</div>	
 		</par>
 		<canvas id="canvas2D"></canvas>
 	</body>

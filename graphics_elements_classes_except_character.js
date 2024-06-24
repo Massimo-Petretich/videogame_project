@@ -1,22 +1,18 @@
 class GraphicElement {
 	constructor(x, y) {
 		this.x = x;
+		this.xCamera = x;
 		this.y = y;
 	}
 	wrapAroundLeftRight() {
-		if (this.x > 0.5 * params.gameCanvasWidth) {
-			this.x -= params.gameCanvasWidth;
-		} else if (this.x < -0.5 * params.gameCanvasWidth) {
-			this.x += params.gameCanvasWidth;
+		if (this.xCamera > 0.5 * window.configs.gameCanvasWidth) {
+			this.xCamera -= window.configs.gameCanvasWidth;
+		} else if (this.xCamera < -0.5 * window.configs.gameCanvasWidth) {
+			this.xCamera += window.configs.gameCanvasWidth;
 		}
 	}
 	updatePosition() {
-		if (keys.isLeft) this.x += params.speedHorizontal;
-		if (keys.isRight) this.x -= params.speedHorizontal;
-		if (keys.isThrusterRight && thrusterPack.isFound)
-			this.x -= params.speedHorizontal;
-		if (keys.isThrusterLeft && thrusterPack.isFound)
-			this.x += params.speedHorizontal;
+		this.xCamera = this.x - window.gameSession.cameraXCoordinate;
 		this.wrapAroundLeftRight();
 	}
 }
@@ -28,6 +24,7 @@ class Rect extends GraphicElement {
 		width,
 		height,
 		color,
+		context,
 		borderColor = color,
 		borderWidth = 0
 	) {
@@ -35,16 +32,17 @@ class Rect extends GraphicElement {
 		this.width = width;
 		this.height = height;
 		this.color = color;
+		this.context = context;
 		this.borderColor = borderColor;
 		this.borderWidth = borderWidth;
 	}
 	draw() {
-		context.fillStyle = this.color;
-		context.fillRect(this.x, this.y, this.width, this.height);
+		this.context.fillStyle = this.color;
+		this.context.fillRect(this.xCamera, this.y, this.width, this.height);
 		// border
-		context.strokeStyle = this.borderColor;
-		context.lineWidth = this.borderWidth;
-		context.strokeRect(this.x, this.y, this.width, this.height);
+		this.context.strokeStyle = this.borderColor;
+		this.context.lineWidth = this.borderWidth;
+		this.context.strokeRect(this.xCamera, this.y, this.width, this.height);
 	}
 	static create(...args) {
 		return new this(...args);
@@ -60,6 +58,7 @@ class Floor extends GraphicElement {
 		floorColor,
 		frontHeightProp,
 		frontColor,
+		context,
 		borderColor = color,
 		borderWidth = 0
 	) {
@@ -71,31 +70,34 @@ class Floor extends GraphicElement {
 		this.borderWidth = borderWidth;
 		this.frontHeightProp = frontHeightProp;
 		this.frontColor = frontColor;
+		this.context = context;
 
 		this.floorHeightProp = 1 - frontHeightProp;
 		this.floorOffset = 0.5 * height * this.floorHeightProp;
 
 		this.frontHeight = height * frontHeightProp;
 		this.yLine = y + height - this.floorOffset - this.frontHeight;
-		this.xEnd = x + width;
+		this.xCameraEnd = x + width;
 		this.rects = this.generateRects();
 	}
 	generateRects() {
 		const topSide = new Rect(
-			this.x,
+			this.xCamera,
 			this.y - this.floorOffset,
 			this.width,
 			this.frontHeight + this.floorOffset,
 			this.floorColor,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		);
 		const frontSide = new Rect(
-			this.x,
+			this.xCamera,
 			this.yLine,
 			this.width,
 			this.frontHeight,
 			this.frontColor,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		);
@@ -107,7 +109,9 @@ class Floor extends GraphicElement {
 		this.rects["frontSide"].updatePosition();
 	}
 	get isOutsideCanvas() {
-		return this.x + this.width < 0 || this.x > canvas.width;
+		return (
+			this.xCamera + this.width < 0 || this.xCamera > window.innerWidth
+		);
 	}
 	draw() {
 		if (this.isOutsideCanvas) return null;
@@ -121,78 +125,27 @@ class Floor extends GraphicElement {
 
 class Floors {
 	constructor(
-		canvasWidth,
-		canvasHeight,
-		nPieces,
-		widthProp,
-		yProp,
-		heightProp,
+		x,
+		y,
+		height,
 		topSideColor,
 		frontSideColor = topSideColor,
+		context,
 		frontSideHeightProp = 0.8,
 		borderColor = topSideColor,
 		borderWidth = 0
 	) {
-		this.canvasWidth = canvasWidth;
-		this.canvasHeight = canvasHeight;
-		this.nPieces = nPieces;
-		(this.widthProp = widthProp), (this.yProp = yProp);
-		this.heightProp = heightProp;
+		this.x = x;
+		this.y = y;
+		this.height = height;
 		this.topSideColor = topSideColor;
 		this.frontSideColor = frontSideColor;
+		this.context = context;
 		this.frontSideHeightProp = frontSideHeightProp;
 		this.borderColor = borderColor;
 		this.borderWidth = borderWidth;
-
-		this.holesWidthProp = 1 - widthProp;
-		this.y = canvasHeight * yProp;
-		this.x = 0;
-		this.width = canvasWidth;
-		this.height = canvasHeight * heightProp;
-		this.nHoles = nPieces;
-		this.holesSize =
-			(this.canvasWidth * this.holesWidthProp) / this.nPieces;
-		this.floorsSize = canvasWidth / this.nPieces;
 		this.floors = this.generateFloors();
-		this.holes = this.generateHoles();
 	}
-	generateFloorsXCoordinates(_, idx) {
-		const coordinates = {};
-		coordinates.start =
-			idx * this.floorsSize +
-			0.5 * this.holesSize -
-			0.5 * this.canvasWidth;
-		coordinates.end =
-			(idx + 1) * this.floorsSize -
-			0.5 * this.holesSize -
-			0.5 * this.canvasWidth;
-		return coordinates;
-	}
-	get floorsXCoordinates() {
-		const xCoordinates = Array(this.nPieces)
-			.fill(0)
-			.map(this.generateFloorsXCoordinates.bind(this));
-		return xCoordinates;
-	}
-	generateHolesXCoordinates(_, idx) {
-		const coordinates = {};
-		coordinates.start =
-			idx * this.floorsSize -
-			0.5 * this.holesSize -
-			0.5 * this.canvasWidth;
-		coordinates.end =
-			idx * this.floorsSize +
-			0.5 * this.holesSize -
-			0.5 * this.canvasWidth;
-		return coordinates;
-	}
-	get holesXCoordinates() {
-		const xCoordinates = Array(this.nPieces + 1)
-			.fill(0)
-			.map(this.generateHolesXCoordinates.bind(this));
-		return xCoordinates;
-	}
-
 	generateFloor(coordinates) {
 		return new Floor(
 			coordinates["start"],
@@ -202,27 +155,16 @@ class Floors {
 			this.topSideColor,
 			this.frontSideHeightProp,
 			this.frontSideColor,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		);
 	}
 	generateFloors() {
-		return this.floorsXCoordinates.map(this.generateFloor.bind(this));
-	}
-	generateHole(coordinates) {
-		return new Rect(
-			coordinates["start"],
-			this.y,
-			coordinates["end"] - coordinates["start"],
-			this.height
-		);
-	}
-	generateHoles() {
-		return this.holesXCoordinates.map(this.generateHole.bind(this));
+		return this.x.map(this.generateFloor.bind(this));
 	}
 	updatePosition() {
 		this.floors.map((floor) => floor.updatePosition());
-		this.holes.map((hole) => hole.updatePosition());
 	}
 	draw() {
 		for (let idx = 0; idx < this.floors.length; idx++) {
@@ -235,23 +177,47 @@ class Floors {
 	}
 }
 
+class Holes {
+	constructor(x) {
+		this.x = x;
+		this.holes = this.generateHoles();
+	}
+	generateHole(coordinates) {
+		return new Rect(
+			coordinates["start"],
+			null,
+			coordinates["end"] - coordinates["start"],
+			null
+		);
+	}
+	generateHoles() {
+		return this.x.map(this.generateHole.bind(this));
+	}
+	updatePosition() {
+		this.holes.map((hole) => hole.updatePosition());
+	}
+	draw() {
+		return null;
+	}
+}
 class Star extends GraphicElement {
-	constructor(x, y, radius, starColor, speed) {
+	constructor(x, y, radius, starColor, speed, context) {
 		super(x, y);
 		this.radius = radius;
 		this.starColor = starColor;
 		this.speed = speed;
+		this.context = context;
 	}
 	get isOutsideCanvas() {
-		return this.x < 0 || this.x > canvas.width;
+		return this.xCamera < 0 || this.xCamera > window.innerWidth;
 	}
 	draw() {
 		if (this.isOutsideCanvas) return null;
-		context.fillStyle = this.starColor;
-		context.beginPath();
-		context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
-		context.fill();
-		context.closePath();
+		this.context.fillStyle = this.starColor;
+		this.context.beginPath();
+		this.context.arc(this.xCamera, this.y, this.radius, 0, 2 * Math.PI);
+		this.context.fill();
+		this.context.closePath();
 	}
 	updatePosition() {
 		super.updatePosition();
@@ -263,27 +229,25 @@ class Star extends GraphicElement {
 }
 
 class Stars {
-	constructor(canvasWidth, canvasHeight, radius, starColor, nStars, speed) {
-		this.canvasHeight = canvasHeight;
-		this.canvasWidth = canvasWidth;
-		this.nStars = nStars;
-		this.radius = radius;
+	constructor(starsParams, starColor, speed, context) {
+		this.starsParams = starsParams;
 		this.starColor = starColor;
 		this.speed = speed;
+		this.context = context;
 		this.stars = this.generateStars();
 	}
-	generateStar() {
-		const x = Math.random() * this.canvasWidth - 0.5 * this.canvasWidth;
-		const y = Math.random() * this.canvasHeight;
-		const radius = Math.random() * this.radius;
-		const star = new Star(x, y, radius, this.starColor, this.speed);
-		return star;
+	generateStar(starsParams) {
+		return new Star(
+			starsParams.x,
+			starsParams.y,
+			starsParams.radius,
+			this.starColor,
+			this.speed,
+			this.context
+		);
 	}
 	generateStars() {
-		const stars = Array(this.nStars)
-			.fill(0)
-			.map(this.generateStar.bind(this));
-		return stars;
+		return this.starsParams.map(this.generateStar.bind(this));
 	}
 	draw() {
 		this.stars.map((star) => star.draw());
@@ -297,51 +261,53 @@ class Stars {
 }
 
 class Cloud extends GraphicElement {
-	constructor(x, y, size, color) {
+	constructor(x, y, size, color, context) {
 		super(x, y);
 		this.size = size;
 		this.color = color;
+		this.context = context;
 	}
 	get isOutsideCanvas() {
 		return (
-			this.x + 2 * this.size < 0 || this.x - 2 * this.size > canvas.width
+			this.xCamera + 2 * this.size < 0 ||
+			this.xCamera - 2 * this.size > window.innerWidth
 		);
 	}
 	draw() {
 		if (this.isOutsideCanvas) return null;
-		context.fillStyle = this.color;
-		context.beginPath();
-		context.arc(this.x, this.y, this.size, 0, 2 * Math.PI);
-		context.arc(
-			this.x - this.size,
+		this.context.fillStyle = this.color;
+		this.context.beginPath();
+		this.context.arc(this.xCamera, this.y, this.size, 0, 2 * Math.PI);
+		this.context.arc(
+			this.xCamera - this.size,
 			this.y,
 			0.7 * this.size,
 			0,
 			2 * Math.PI
 		);
-		context.arc(
-			this.x + this.size,
+		this.context.arc(
+			this.xCamera + this.size,
 			this.y,
 			0.7 * this.size,
 			0,
 			2 * Math.PI
 		);
-		context.arc(
-			this.x - 1.7 * this.size,
+		this.context.arc(
+			this.xCamera - 1.7 * this.size,
 			this.y,
 			0.4 * this.size,
 			0,
 			2 * Math.PI
 		);
-		context.arc(
-			this.x + 1.7 * this.size,
+		this.context.arc(
+			this.xCamera + 1.7 * this.size,
 			this.y,
 			0.4 * this.size,
 			0,
 			2 * Math.PI
 		);
-		context.fill();
-		context.closePath();
+		this.context.fill();
+		this.context.closePath();
 	}
 	static create(...args) {
 		return new this(...args);
@@ -349,26 +315,23 @@ class Cloud extends GraphicElement {
 }
 
 class Clouds {
-	constructor(canvasWidth, canvasHeight, size, color, nPieces) {
-		this.canvasHeight = canvasHeight;
-		this.canvasWidth = canvasWidth;
-		this.nPieces = nPieces;
-		this.size = size;
+	constructor(cloudsParams, color, context) {
+		this.cloudsParams = cloudsParams;
 		this.color = color;
+		this.context = context;
 		this.clouds = this.generateClouds();
 	}
-	generateCloud() {
-		const x = Math.random() * this.canvasWidth - 0.5 * this.canvasWidth;
-		const y = Math.random() * this.canvasHeight;
-		const size = Math.random() * this.size;
-		const cloud = new Cloud(x, y, size, this.color);
-		return cloud;
+	generateCloud(cloudParams) {
+		return new Cloud(
+			cloudParams.x,
+			cloudParams.y,
+			cloudParams.size,
+			this.color,
+			this.context
+		);
 	}
 	generateClouds() {
-		const clouds = Array(this.nPieces)
-			.fill(0)
-			.map(this.generateCloud.bind(this));
-		return clouds;
+		return this.cloudsParams.map(this.generateCloud.bind(this));
 	}
 	draw() {
 		this.clouds.map((cloud) => cloud.draw());
@@ -390,7 +353,8 @@ class Tree extends GraphicElement {
 		potColor,
 		stemColor,
 		canopyColor,
-		borderColor
+		borderColor,
+		context
 	) {
 		super(x, y);
 		this.width = width;
@@ -399,77 +363,87 @@ class Tree extends GraphicElement {
 		this.stemColor = stemColor;
 		this.canopyColor = canopyColor;
 		this.borderColor = borderColor;
+		this.context = context;
 		this.potHeight = 0.2 * height;
 		this.potWidth = 0.3 * width;
 		this.canopyHeight = 0.4 * height;
 	}
-	get xMid() {
-		return this.x + 0.5 * this.width;
+	get xCameraMid() {
+		return this.xCamera + 0.5 * this.width;
 	}
 	drawCanopy() {
-		context.fillStyle = this.canopyColor;
-		context.beginPath();
-		context.arc(
-			this.xMid,
+		this.context.fillStyle = this.canopyColor;
+		this.context.beginPath();
+		this.context.arc(
+			this.xCameraMid,
 			this.y + 0.5 * this.canopyHeight,
 			0.4 * this.canopyHeight,
 			0,
 			2 * Math.PI
 		);
-		context.arc(
-			this.xMid + 0.1 * this.width,
+		this.context.arc(
+			this.xCameraMid + 0.1 * this.width,
 			this.y + 0.5 * this.canopyHeight + 0.1 * this.height,
 			0.5 * this.canopyHeight,
 			0,
 			2 * Math.PI
 		);
-		context.arc(
-			this.xMid - 0.1 * this.width,
+		this.context.arc(
+			this.xCameraMid - 0.1 * this.width,
 			this.y + 0.5 * this.canopyHeight + 0.1 * this.height,
 			0.5 * this.canopyHeight,
 			0,
 			2 * Math.PI
 		);
-		context.arc(
-			this.xMid,
+		this.context.arc(
+			this.xCameraMid,
 			this.y + 0.5 * this.canopyHeight + 0.15 * this.height,
 			0.5 * this.canopyHeight,
 			0,
 			2 * Math.PI
 		);
-		context.closePath();
-		context.fill();
+		this.context.closePath();
+		this.context.fill();
 	}
 	drawPot() {
-		context.fillStyle = this.potColor;
-		context.strokeStyle = this.borderColor;
-		context.beginPath();
-		context.moveTo(
-			this.xMid - 0.5 * this.potWidth,
+		this.context.fillStyle = this.potColor;
+		this.context.strokeStyle = this.borderColor;
+		this.context.beginPath();
+		this.context.moveTo(
+			this.xCameraMid - 0.5 * this.potWidth,
 			this.y + this.height - this.potHeight
 		);
-		context.lineTo(
-			this.xMid + 0.5 * this.potWidth,
+		this.context.lineTo(
+			this.xCameraMid + 0.5 * this.potWidth,
 			this.y + this.height - this.potHeight
 		);
-		context.lineTo(this.xMid + 0.4 * this.potWidth, this.y + this.height);
-		context.lineTo(this.xMid - 0.4 * this.potWidth, this.y + this.height);
-		context.closePath();
-		context.fill();
-		context.stroke();
+		this.context.lineTo(
+			this.xCameraMid + 0.4 * this.potWidth,
+			this.y + this.height
+		);
+		this.context.lineTo(
+			this.xCameraMid - 0.4 * this.potWidth,
+			this.y + this.height
+		);
+		this.context.closePath();
+		this.context.fill();
+		this.context.stroke();
 	}
 	drawStem() {
 		Rect.create(
-			this.xMid - 0.05 * this.width,
+			this.xCameraMid - 0.05 * this.width,
 			this.y + this.canopyHeight,
 			0.1 * this.width,
 			this.height - this.canopyHeight,
 			this.stemColor,
+			this.context,
 			this.borderColor
 		).draw();
 	}
 	get isOutsideCanvas() {
-		return this.x + this.width < 0 || this.x > canvas.width;
+		return (
+			this.xCamera + this.width < 0 || this.xCamera > window.innerWidth
+		);
 	}
 	draw() {
 		if (this.isOutsideCanvas) return null;
@@ -483,21 +457,26 @@ class Tree extends GraphicElement {
 }
 
 class Trees {
-	constructor(width, height, potColor, stemColor, canopyColor, borderColor) {
+	constructor(
+		x,
+		width,
+		height,
+		potColor,
+		stemColor,
+		canopyColor,
+		borderColor,
+		context
+	) {
+		this.x = x;
 		this.width = width;
 		this.height = height;
 		this.potColor = potColor;
 		this.stemColor = stemColor;
 		this.canopyColor = canopyColor;
 		this.borderColor = borderColor;
-		this.y = floors.y - height;
-		this.x = this.extractFloorsXMids();
+		this.context = context;
+		this.y = window.configs.floorsY - height;
 		this.trees = this.generateTrees();
-	}
-	extractFloorsXMids() {
-		return floors.floors.map(
-			(floor) => floor.x + 0.5 * floor.width - 0.5 * this.width
-		);
 	}
 	generateTrees() {
 		const trees = this.x.map((x) =>
@@ -509,7 +488,8 @@ class Trees {
 				this.potColor,
 				this.stemColor,
 				this.canopyColor,
-				this.borderColor
+				this.borderColor,
+				this.context
 			)
 		);
 		return trees;
@@ -526,8 +506,8 @@ class Trees {
 }
 
 class ThrustersPack extends Rect {
-	constructor(x, y, width, height, color, borderColor, borderWidth) {
-		super(x, y, width, height, color, borderColor, borderWidth);
+	constructor(x, y, width, height, color, borderColor, borderWidth, context) {
+		super(x, y, width, height, color, context, borderColor, borderWidth);
 		this.flapHeight = height * 0.2;
 		this.pocketWidth = width * 0.6;
 		this.pocketHeight = height * 0.3;
@@ -536,33 +516,36 @@ class ThrustersPack extends Rect {
 	}
 	drawFlap() {
 		Rect.create(
-			this.x,
+			this.xCamera,
 			this.y - this.flapHeight,
 			this.width,
 			this.flapHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawPocket2() {
 		Rect.create(
-			this.x + this.width * 0.3,
+			this.xCamera + this.width * 0.3,
 			this.pocketY,
 			this.pocketWidth,
 			this.pocketHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawPocket() {
 		Rect.create(
-			this.x + this.width * 0.1,
+			this.xCamera + this.width * 0.1,
 			this.pocketY,
 			this.pocketWidth,
 			this.pocketHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
@@ -583,80 +566,88 @@ class OxygenPack extends GraphicElement {
 	constructor(
 		x,
 		y,
+		speedX,
+		speedY,
 		width,
 		height,
 		color,
+		textColor,
+		context,
 		borderColor = color,
 		borderWidth = 0,
-		jittering = 0,
-		speed = 0
+		jittering = 0
 	) {
 		super(x, y);
+		this.speedX = speedX;
+		this.speedY = speedY;
 		this.width = width;
 		this.height = height;
 		this.color = color;
+		this.textColor = textColor;
+		this.context = context;
 		this.borderColor = borderColor;
 		this.borderWidth = borderWidth;
 		this.jittering = jittering;
 		this.isFound = false;
-		this.speedX = speed * Math.sign(Math.random() - 0.5);
-		this.speedY = speed * Math.sign(Math.random() - 0.5);
 		this.radius = 0.5 * this.width;
 	}
 	drawMiddle() {
 		Rect.create(
-			this.x,
+			this.xCamera,
 			this.y + this.radius,
 			this.width,
 			this.height - 2 * this.radius,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawTopCircle() {
-		context.fillStyle = this.color;
-		context.strokeStyle = this.borderColor;
-		context.lineWidth = this.borderWidth;
-		context.beginPath();
-		context.arc(
-			this.x + 0.5 * this.width,
+		this.context.fillStyle = this.color;
+		this.context.strokeStyle = this.borderColor;
+		this.context.lineWidth = this.borderWidth;
+		this.context.beginPath();
+		this.context.arc(
+			this.xCamera + 0.5 * this.width,
 			this.y + this.radius,
 			this.radius,
 			Math.PI,
 			0
 		);
-		context.closePath();
-		context.fill();
-		context.stroke();
+		this.context.closePath();
+		this.context.fill();
+		this.context.stroke();
 	}
 	drawBottomCircle() {
-		context.fillStyle = this.color;
-		context.strokeStyle = this.borderColor;
-		context.lineWidth = this.borderWidth;
-		context.beginPath();
-		context.arc(
-			this.x + 0.5*this.width,
+		this.context.fillStyle = this.color;
+		this.context.strokeStyle = this.borderColor;
+		this.context.lineWidth = this.borderWidth;
+		this.context.beginPath();
+		this.context.arc(
+			this.xCamera + 0.5 * this.width,
 			this.y + this.height - this.radius,
 			this.radius,
 			0,
 			Math.PI
 		);
-		context.closePath();
-		context.fill();
-		context.stroke();
+		this.context.closePath();
+		this.context.fill();
+		this.context.stroke();
 	}
 	addText() {
-		context.textAlign = "center";
-		context.fillStyle = params.textColor;
-		context.fillText(
+		this.context.textAlign = "center";
+		this.context.fillStyle = this.textColor;
+		this.context.fillText(
 			"O2",
-			this.x + 0.5 * this.width,
+			this.xCamera + 0.5 * this.width,
 			this.y + 0.5 * this.height
 		);
 	}
 	get isOutsideCanvas() {
-		return this.x + this.width < 0 || this.x > canvas.width;
+		return (
+			this.xCamera + this.width < 0 || this.xCamera > window.innerWidth
+		);
 	}
 	draw() {
 		if (this.isOutsideCanvas) return null;
@@ -667,6 +658,7 @@ class OxygenPack extends GraphicElement {
 		this.addText();
 	}
 	jitterPosition() {
+		if (this.jittering <= 0) return null;
 		this.x += this.jittering * (Math.random() - 0.5);
 		this.y += this.jittering * (Math.random() - 0.5);
 	}
@@ -675,12 +667,12 @@ class OxygenPack extends GraphicElement {
 		this.x += this.speedX;
 	}
 	wrapGoinDown() {
-		if (this.y > canvas.height && this.speedY > 0)
-			this.y -= canvas.height + this.height;
+		if (this.y > window.innerHeight && this.speedY > 0)
+			this.y -= window.innerHeight + this.height;
 	}
 	wrapGoingUp() {
 		if (this.y + this.height < 0 && this.speedY < 0)
-			this.y += canvas.height + this.height;
+			this.y += window.innerHeight + this.height;
 	}
 	wrapAroundTopBottom() {
 		this.wrapGoinDown();
@@ -699,48 +691,52 @@ class OxygenPack extends GraphicElement {
 
 class OxygenPacks {
 	constructor(
-		nPieces,
+		oxygenPacksParams,
 		width,
 		height,
 		color,
+		textColor,
 		borderColor,
+		context,
 		borderWidth = 0,
-		jittering = 0,
-		speed = 0
+		jittering = 0
 	) {
-		this.nPieces = nPieces;
+		this.oxygenPacksParams = oxygenPacksParams;
 		this.width = width;
 		this.height = height;
 		this.color = color;
+		this.textColor = textColor;
 		this.borderWidth = borderWidth;
 		this.borderColor = borderColor;
+		this.context = context;
 		this.jittering = jittering;
-		this.speed = speed;
 		this.oxygenPacks = this.generateOxygenPacks();
 	}
-	get x() {
-		return Math.random() * params.gameCanvasWidth;
+	get foundCount() {
+		return this.oxygenPacks
+			.map((oxygenPack) => (oxygenPack.isFound ? 1 : 0))
+			.reduce((a, b) => a + b);
 	}
-	get y() {
-		return (Math.random() + 0.5) * 0.5 * params.floorYProp * canvas.height;
-	}
-	generateOxygenPack() {
+	generateOxygenPack(oxygenPacksParam) {
 		return new OxygenPack(
-			this.x,
-			this.y,
+			oxygenPacksParam.x,
+			oxygenPacksParam.y,
+			oxygenPacksParam.speedX,
+			oxygenPacksParam.speedY,
 			this.width,
 			this.height,
 			this.color,
+			this.textColor,
+			this.context,
 			this.borderColor,
 			this.borderWidth,
-			this.jittering,
-			this.speed
+			this.jittering
 		);
 	}
 	generateOxygenPacks() {
-		const oxygenPacks = Array(this.nPieces)
-			.fill(0)
-			.map(this.generateOxygenPack.bind(this));
+		const oxygenPacks = this.oxygenPacksParams.map(
+			this.generateOxygenPack.bind(this)
+		);
 		return oxygenPacks;
 	}
 	draw() {
@@ -755,88 +751,95 @@ class OxygenPacks {
 }
 
 class Mountain extends GraphicElement {
-	constructor(x, y, width, height, color, borderColor) {
+	constructor(x, y, width, height, color, borderColor, context) {
 		super(x, y);
 		this.height = height;
 		this.width = width;
 		this.color = color;
 		this.borderColor = borderColor;
+		this.context = context;
 	}
 	drawTriangle(x1, y1, x2, y2, x3, y3) {
-		context.fillStyle = this.color;
-		context.strokeStyle = this.borderColor;
-		context.beginPath();
-		context.moveTo(x1, y1);
-		context.lineTo(x2, y2);
-		context.lineTo(x3, y3);
-		context.closePath();
-		context.fill();
-		context.stroke();
+		this.context.fillStyle = this.color;
+		this.context.strokeStyle = this.borderColor;
+		this.context.beginPath();
+		this.context.moveTo(x1, y1);
+		this.context.lineTo(x2, y2);
+		this.context.lineTo(x3, y3);
+		this.context.closePath();
+		this.context.fill();
+		this.context.stroke();
 	}
 	get isOutsideCanvas() {
-		return this.x + this.width < 0 || this.x > canvas.width;
+		return (
+			this.xCamera + this.width < 0 || this.xCamera > window.innerWidth
+		);
 	}
 	draw() {
 		if (this.isOutsideCanvas) return null;
 		this.drawTriangle(
-			this.x + 0.2 * this.width,
+			this.xCamera + 0.2 * this.width,
 			this.y + 0.05 * this.height,
-			this.x + 0.4 * this.width,
+			this.xCamera + 0.4 * this.width,
 			this.y + this.height,
-			this.x,
+			this.xCamera,
 			this.y + this.height
 		);
 		this.drawTriangle(
-			this.x + 0.3 * this.width,
+			this.xCamera + 0.3 * this.width,
 			this.y,
-			this.x + 0.6 * this.width,
+			this.xCamera + 0.6 * this.width,
 			this.y + this.height,
-			this.x,
+			this.xCamera,
 			this.y + this.height
 		);
 		this.drawTriangle(
-			this.x + 0.7 * this.width,
+			this.xCamera + 0.7 * this.width,
 			this.y + 0.15 * this.height,
-			this.x + this.width,
+			this.xCamera + this.width,
 			this.y + this.height,
-			this.x + 0.4 * this.width,
+			this.xCamera + 0.4 * this.width,
 			this.y + this.height
 		);
 		this.drawTriangle(
-			this.x + 0.5 * this.width,
+			this.xCamera + 0.5 * this.width,
 			this.y + 0.3 * this.height,
-			this.x + 0.2 * this.width,
+			this.xCamera + 0.2 * this.width,
 			this.y + this.height,
-			this.x + 0.8 * this.width,
+			this.xCamera + 0.8 * this.width,
 			this.y + this.height
 		);
 		this.drawTriangle(
-			this.x + 0.7 * this.width,
+			this.xCamera + 0.7 * this.width,
 			this.y + 0.7 * this.height,
-			this.x + 0.4 * this.width,
+			this.xCamera + 0.4 * this.width,
 			this.y + this.height,
-			this.x + 1 * this.width,
+			this.xCamera + 1 * this.width,
 			this.y + this.height
 		);
 	}
 }
 
 class Planet extends GraphicElement {
-	constructor(x, y, radius, color, speed) {
+	constructor(x, y, radius, color, speed, context) {
 		super(x, y);
 		this.radius = radius;
 		this.color = color;
 		this.speed = speed;
+		this.context = context;
 	}
 	get isOutsideCanvas() {
-		return this.x + this.radius < 0 || this.x - this.radius > canvas.width;
+		return (
+			this.xCamera + this.radius < 0 ||
+			this.xCamera - this.radius > window.innerWidth
+		);
 	}
 	draw() {
 		if (this.isOutsideCanvas) return null;
-		context.fillStyle = this.color;
-		context.beginPath();
-		context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-		context.fill();
+		this.context.fillStyle = this.color;
+		this.context.beginPath();
+		this.context.arc(this.xCamera, this.y, this.radius, 0, Math.PI * 2, true);
+		this.context.fill();
 	}
 	updatePosition() {
 		super.updatePosition();

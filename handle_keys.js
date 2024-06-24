@@ -1,43 +1,56 @@
+let keys = {
+	isLeft: false,
+	isRight: false,
+	isJumping: false,
+	isThrusterUp: false,
+	isThrusterDown: false,
+	isThrusterLeft: false,
+	isThrusterRight: false,
+	isInfo: false,
+	isClearInfo: false,
+};
+
 const handleKey = (event, status) => {
-	if (gameSession.gameState === 'game over') { 
-		return null
-	}
-	const element = document.getElementById("key-info");
-	element.dataset.key = event.key;
-	element.dataset.code = event.code;
+	if (
+		window.gameSession.gameState === "game over" ||
+		window.gameSession.gameState === "game ended" ||
+		window.gameSession.gameState === "mission accomplished"
+	)
+		return null;
+
+	const element = document.getElementById("key-info")
 	element.textContent = `Key: ${event.key}, Code: ${event.code}`;
-	
-	// console.log(element.dataset);
+
 	switch (event.key) {
-		case 'ArrowUp':
+		case "ArrowUp":
 			keys.isThrusterUp = status;
 			break;
-		case 'ArrowLeft':
+		case "ArrowLeft":
 			keys.isThrusterLeft = status;
 			break;
-		case 'ArrowRight':
+		case "ArrowRight":
 			keys.isThrusterRight = status;
 			break;
-		case 'ArrowDown':
+		case "ArrowDown":
 			keys.isThrusterDown = status;
 			break;
-		case 'w':
+		case "w":
 			keys.isJumping = status;
 			break;
-		case 'a':
+		case "a":
 			keys.isLeft = status;
 			break;
-		case 'd':
+		case "d":
 			keys.isRight = status;
 			break;
-		case 'h':
+		case "h":
 			keys.isInfo = status;
 			break;
-		case 'c':
+		case "c":
 			keys.isClearInfo = status;
 			break;
 	}
-}
+};
 
 document.addEventListener("keyup", (event) => handleKey(event, false));
 document.addEventListener("keydown", (event) => handleKey(event, true));

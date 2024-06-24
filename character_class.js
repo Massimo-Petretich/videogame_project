@@ -4,16 +4,20 @@ class Character {
 		y,
 		width,
 		height,
-		color = "#FFFFFF",
+		color,
+		context,
 		borderColor = color,
 		borderWidth = 0,
-		backpackColor = "#777777"
+		backpackColor = "#777777",
+		hasThrusterPack = false
 	) {
 		this.x = x;
+		this.xCamera = x;
 		this.y = y;
 		this.width = width;
 		this.height = height;
 		this.color = color;
+		this.context = context;
 		this.borderColor = borderColor;
 		this.borderWidth = borderWidth;
 		this.backpackColor = backpackColor;
@@ -27,11 +31,10 @@ class Character {
 		this.shoeWidth = width * 0.15;
 		this.shoeHeight = height * 0.08;
 		this.canJump = true;
-		this.xOrientation = "right";
-		this.yOrientation = "down";
+		this.hasThrusterPack = hasThrusterPack;
 	}
-	get xMid() {
-		return this.x + 0.5 * this.width;
+	get xCameraMid() {
+		return this.xCamera + 0.5 * this.width;
 	}
 	get yMid() {
 		return this.y + 0.5 * this.height;
@@ -52,67 +55,50 @@ class Character {
 		return 0.3 * this.backpackWidth;
 	}
 	centerDist(x, y) {
-		const xDist = this.xMid - x;
+		const xDist = this.xCameraMid - x;
 		const yDist = this.yMid - y;
 		return Math.sqrt(xDist ** 2 + yDist ** 2);
 	}
 
 	isBelowFloor() {
-		return this.y > floors.y - this.height;
+		return this.y > window.configs.floorsY - this.height;
 	}
 	touchesFloor() {
-		return this.y + this.height == floors.y;
+		return this.y + this.height == window.configs.floorsY;
 	}
 	touchesCanvasBottom() {
-		return this.y + this.height == canvas.height;
+		return this.y + this.height == window.innerHeight;
 	}
 	isWithinXHole(hole) {
-		return this.xMid > hole.x && this.xMid < hole.x + hole.width;
+		return (
+			this.xCameraMid > hole.xCamera &&
+			this.xCameraMid < hole.xCamera + hole.width
+		);
 	}
-	isWithinXHoles() {
-		const isWithinXHoles = floors.holes.map(this.isWithinXHole.bind(this));
-		return isWithinXHoles.some((element) => element);
+	isWithinXHoles(holes) {
+		return holes
+			.map(this.isWithinXHole.bind(this))
+			.some((element) => element);
 	}
-	getBottom = () => {
-		if (this.isWithinXHoles()) {
-			return canvas.height;
-		} else {
-			return floors.y;
-		}
+	getBottom(holes) {
+		if (this.isWithinXHoles(holes)) return window.innerHeight;
+		return window.configs.floorsY;
 	};
 
-	updatePosition() {
-		if (keys.isLeft) {
-			this.xOrientation = "left";
-		}
-		if (keys.isRight) {
-			this.xOrientation = "right";
-		}
-		if (keys.isThrusterRight && thrusterPack.isFound) {
-			this.xOrientation = "right";
-		}
-		if (keys.isThrusterLeft && thrusterPack.isFound) {
-			this.xOrientation = "left";
-		}
-		if (keys.isThrusterUp && thrusterPack.isFound) {
-			this.y -= params.speedUp;
-			this.yOrientation = "up";
-		}
-		if (keys.isThrusterDown && thrusterPack.isFound) {
-			this.y += params.speedDown;
-			this.yOrientation = "down";
-		}
+	updatePosition(holes) {
+		if (keys.isThrusterUp && this.hasThrusterPack)
+			this.y -= window.configs.speedUp;
+		if (keys.isThrusterDown && this.hasThrusterPack)
+			this.y += window.configs.speedDown;
 		if (keys.isJumping && this.canJump) {
-			let jumpHeight = floors.y - (this.y + this.height);
-			if (jumpHeight <= params.jumpHeight) {
-				let jumpRemainder = params.jumpHeight - jumpHeight;
-				if (jumpRemainder > params.speedUp) {
-					this.y -= params.speedUp;
-					this.yOrientation = "up";
+			let jumpHeight = window.configs.floorsY - (this.y + this.height);
+			if (jumpHeight <= window.configs.jumpHeight) {
+				let jumpRemainder = window.configs.jumpHeight - jumpHeight;
+				if (jumpRemainder > window.configs.speedUp) {
+					this.y -= window.configs.speedUp;
 				} else {
 					this.y -= jumpRemainder;
 					this.canJump = false;
-					this.yOrientation = "down";
 				}
 			}
 		}
@@ -120,10 +106,10 @@ class Character {
 		if (!keys.isJumping) this.canJump = false;
 		//can jump again only if touches the floor
 		if (!this.canJump && this.touchesFloor()) this.canJump = true;
-		this.y += params.speedGravity;
-		this.y = Math.min(this.y, this.getBottom() - this.height);
+		this.y += window.configs.speedGravity;
+		this.y = Math.min(this.y, this.getBottom(holes) - this.height);
 		// this.y = Math.max(this.y, 0); // stop from going above canvas
-		// if (this.y <= 0) this.y += 0.2 * canvas.height; // bounce when touches top
+		// if (this.y <= 0) this.y += 0.2 * window.innerHeight; // bounce when touches top
 	}
 
 	draw(position) {
@@ -155,179 +141,191 @@ class Character {
 	}
 	drawForwardThrustersPack() {
 		Rect.create(
-			this.xMid - 0.5 * this.backpackWidth,
+			this.xCameraMid - 0.5 * this.backpackWidth,
 			this.yThrustersPack,
 			this.backpackWidth,
 			this.backpackHeight,
 			this.backpackColor,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardBody() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth,
 			this.yBody,
 			this.bodyWidth,
 			this.bodyHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardBlueDot() {
-		context.fillStyle = "blue";
-		context.beginPath();
-		context.arc(
-			this.xMid + 0.25 * this.bodyWidth,
+		this.context.fillStyle = "blue";
+		this.context.beginPath();
+		this.context.arc(
+			this.xCameraMid + 0.25 * this.bodyWidth,
 			this.yBody + 0.25 * this.bodyHeight,
 			0.1 * this.bodyWidth,
 			0,
 			Math.PI * 2,
 			true
 		);
-		context.fill();
+		this.context.fill();
 	}
 	drawForwardHead() {
-		context.fillStyle = this.color;
-		context.strokeStyle = this.borderColor;
-		context.beginPath();
-		context.arc(
-			this.xMid,
+		this.context.fillStyle = this.color;
+		this.context.strokeStyle = this.borderColor;
+		this.context.beginPath();
+		this.context.arc(
+			this.xCameraMid,
 			this.yHeadCenter,
 			this.headRadius,
 			0,
 			Math.PI * 2,
 			true
 		);
-		context.fill();
-		context.stroke();
+		this.context.fill();
+		this.context.stroke();
 	}
 	drawForwardHelmetVisor() {
-		context.fillStyle = this.borderColor;
-		context.beginPath();
-		context.arc(
-			this.xMid,
+		this.context.fillStyle = this.borderColor;
+		this.context.beginPath();
+		this.context.arc(
+			this.xCameraMid,
 			this.yHeadCenter,
 			0.8 * this.headRadius,
 			-0.2 * Math.PI,
 			-0.8 * Math.PI,
 			false
 		);
-		context.fill();
+		this.context.fill();
 	}
 	drawForwardLeftArm() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth - this.limbWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth - this.limbWidth,
 			this.yArm,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardRightArm() {
 		Rect.create(
-			this.xMid + 0.5 * this.bodyWidth,
+			this.xCameraMid + 0.5 * this.bodyWidth,
 			this.yArm,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardLeftForearm() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth - this.limbWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth - this.limbWidth,
 			this.yArm + 0.5 * this.limbHeight,
 			this.limbWidth,
 			0.35 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardRightForearm() {
 		Rect.create(
-			this.xMid + 0.5 * this.bodyWidth,
+			this.xCameraMid + 0.5 * this.bodyWidth,
 			this.yArm + 0.5 * this.limbHeight,
 			this.limbWidth,
 			0.35 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardRightForeleg() {
 		Rect.create(
-			this.xMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
+			this.xCameraMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
 			this.y + this.height * 0.9,
 			this.limbWidth,
 			this.shoeHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardLeftForeleg() {
 		Rect.create(
-			this.xMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
+			this.xCameraMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
 			this.y + this.height * 0.9,
 			this.limbWidth,
 			this.shoeHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardRightLeg() {
 		Rect.create(
-			this.xMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
+			this.xCameraMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
 			this.yBody + this.bodyHeight,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardLeftLeg() {
 		Rect.create(
-			this.xMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
+			this.xCameraMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
 			this.yBody + this.bodyHeight,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawForwardJumpRightLeg() {
 		Rect.create(
-			this.xMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
+			this.xCameraMid + 0.25 * this.bodyWidth - this.limbWidth * 0.5,
 			this.yBody + this.bodyHeight,
 			this.limbWidth,
 			0.5 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
-			).draw();
-		}
+		).draw();
+	}
 	drawForwardJumpLeftLeg() {
 		Rect.create(
-			this.xMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
+			this.xCameraMid - 0.25 * this.bodyWidth - this.limbWidth * 0.5,
 			this.yBody + this.bodyHeight,
 			this.limbWidth,
 			0.5 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
-			).draw();
-		}
+		).draw();
+	}
 	drawTopBodyFacingForward() {
-		if (thrusterPack.isFound) this.drawForwardThrustersPack();
+		if (this.hasThrusterPack) this.drawForwardThrustersPack();
 		this.drawForwardBody();
 		this.drawForwardBlueDot();
 		this.drawForwardHead();
@@ -349,147 +347,157 @@ class Character {
 		this.drawForwardJumpRightLeg();
 		this.drawTopBodyFacingForward();
 	}
-			
+
 	drawRightRightArm() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth + this.limbWidth,
 			this.yArm,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawRightHelmetVisor() {
-		context.beginPath();
-		context.arc(
-			this.xMid + 0.3 * this.headRadius,
+		this.context.beginPath();
+		this.context.arc(
+			this.xCameraMid + 0.3 * this.headRadius,
 			this.yHeadCenter,
 			0.7 * this.headRadius,
 			-Math.PI * 0.2,
 			-Math.PI * 0.8,
 			false
 		);
-		context.fillStyle = this.borderColor;
-		context.fill();
-		context.stroke();
+		this.context.fillStyle = this.borderColor;
+		this.context.fill();
+		this.context.stroke();
 	}
 	drawRightHead() {
-		context.beginPath();
-		context.arc(
-			this.xMid,
+		this.context.beginPath();
+		this.context.arc(
+			this.xCameraMid,
 			this.yHeadCenter,
 			this.headRadius,
 			0,
 			Math.PI * 2,
 			true
 		);
-		context.fillStyle = this.color;
-		context.fill();
-		context.stroke();
+		this.context.fillStyle = this.color;
+		this.context.fill();
+		this.context.stroke();
 	}
 	drawRightBody() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth,
 			this.yBody,
 			this.bodyWidth,
 			this.bodyHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawRightThrustersPack() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth - this.backpackDepth,
+			this.xCameraMid - 0.5 * this.bodyWidth - this.backpackDepth,
 			this.yThrustersPack,
 			this.backpackDepth,
 			this.backpackHeight,
 			this.backpackColor,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawRightRightForearm() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth + this.limbWidth,
 			this.yArm + 0.5 * this.limbHeight,
 			this.limbWidth,
 			0.35 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawRightBackShoe() {
 		Rect.create(
-			this.xMid - this.limbWidth,
+			this.xCameraMid - this.limbWidth,
 			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
 			1.5 * this.limbWidth,
 			0.15 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawRightForwardShoe() {
 		Rect.create(
-			this.xMid,
+			this.xCameraMid,
 			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
 			1.5 * this.limbWidth,
 			0.15 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawRightForwardLeg() {
 		Rect.create(
-			this.xMid,
+			this.xCameraMid,
 			this.yBody + this.bodyHeight,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawRightBackLeg() {
 		Rect.create(
-			this.xMid - this.limbWidth,
+			this.xCameraMid - this.limbWidth,
 			this.yBody + this.bodyHeight,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawRightJumpingBottomLeg() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth + this.limbWidth,
 			this.yBody + this.bodyHeight + this.limbWidth,
 			0.7 * this.limbHeight,
 			this.limbWidth,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
-			).draw();
-		}
+		).draw();
+	}
 	drawRightJumpingTopLeg() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth + this.limbWidth,
 			this.yBody + this.bodyHeight,
 			0.7 * this.limbHeight,
 			this.limbWidth,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
-			).draw();
-		}
+		).draw();
+	}
 	drawTopBodyRigth() {
-		if (thrusterPack.isFound) this.drawRightThrustersPack();
+		if (this.hasThrusterPack) this.drawRightThrustersPack();
 		this.drawRightBody();
 		this.drawRightHead();
 		this.drawRightHelmetVisor();
@@ -511,137 +519,146 @@ class Character {
 
 	drawLeftLeftForearm() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth + this.limbWidth,
 			this.yArm + 0.5 * this.limbHeight,
 			this.limbWidth,
 			0.35 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawLeftLeftArm() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth + this.limbWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth + this.limbWidth,
 			this.yArm,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawLeftHelmetVisor() {
-		context.fillStyle = this.borderColor;
-		context.beginPath();
-		context.arc(
-			this.xMid - 0.3 * this.headRadius,
+		this.context.fillStyle = this.borderColor;
+		this.context.beginPath();
+		this.context.arc(
+			this.xCameraMid - 0.3 * this.headRadius,
 			this.yHeadCenter,
 			0.7 * this.headRadius,
 			-Math.PI * 0.2,
 			-Math.PI * 0.8,
 			false
 		);
-		context.fill();
+		this.context.fill();
 	}
 	drawLeftHead() {
-		context.fillStyle = this.color;
-		context.strokeStyle = this.borderColor;
-		context.beginPath();
-		context.arc(
-			this.xMid,
+		this.context.fillStyle = this.color;
+		this.context.strokeStyle = this.borderColor;
+		this.context.beginPath();
+		this.context.arc(
+			this.xCameraMid,
 			this.yHeadCenter,
 			this.headRadius,
 			0,
 			Math.PI * 2,
 			true
 		);
-		context.fill();
-		context.stroke();
+		this.context.fill();
+		this.context.stroke();
 	}
 	drawLeftBody() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth,
 			this.yBody,
 			this.bodyWidth,
 			this.bodyHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawLeftThrustersPack() {
 		Rect.create(
-			this.xMid + 0.5 * this.bodyWidth,
+			this.xCameraMid + 0.5 * this.bodyWidth,
 			this.yThrustersPack,
 			this.backpackDepth,
 			this.backpackHeight,
 			this.backpackColor,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawLeftBackShoe() {
 		Rect.create(
-			this.xMid - 1.5 * this.limbWidth,
+			this.xCameraMid - 1.5 * this.limbWidth,
 			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
 			1.5 * this.limbWidth,
 			0.15 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawLeftForwardShoe() {
 		Rect.create(
-			this.xMid - 0.5 * this.limbWidth,
+			this.xCameraMid - 0.5 * this.limbWidth,
 			this.yBody + this.bodyHeight + 0.85 * this.limbHeight,
 			1.5 * this.limbWidth,
 			0.15 * this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawLeftLeftBackLeg() {
 		Rect.create(
-			this.xMid,
+			this.xCameraMid,
 			this.yBody + this.bodyHeight,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawLeftForwardLeg() {
 		Rect.create(
-			this.xMid - this.limbWidth,
+			this.xCameraMid - this.limbWidth,
 			this.yBody + this.bodyHeight,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawLeftJumpingTopLeg() {
 		Rect.create(
-			this.xMid -
-			0.5 * this.bodyWidth +
-			this.limbWidth -
-			0.35 * this.limbHeight,
+			this.xCameraMid -
+				0.5 * this.bodyWidth +
+				this.limbWidth -
+				0.35 * this.limbHeight,
 			this.yBody + this.bodyHeight + this.limbWidth,
 			0.7 * this.limbHeight,
 			this.limbWidth,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawLeftJumpingBottomLeg() {
 		Rect.create(
-			this.xMid -
+			this.xCameraMid -
 				0.5 * this.bodyWidth +
 				this.limbWidth -
 				0.35 * this.limbHeight,
@@ -649,12 +666,13 @@ class Character {
 			0.7 * this.limbHeight,
 			this.limbWidth,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawTopBodyLeft() {
-		if (thrusterPack.isFound) this.drawLeftThrustersPack();
+		if (this.hasThrusterPack) this.drawLeftThrustersPack();
 		this.drawLeftBody();
 		this.drawLeftHead();
 		this.drawLeftHelmetVisor();
@@ -676,98 +694,105 @@ class Character {
 
 	drawBrokenRightLeg() {
 		Rect.create(
-			this.xMid,
+			this.xCameraMid,
 			this.y + this.height - this.limbHeight,
 			this.limbWidth,
 			this.limbHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawBrokenLeftLeg() {
 		Rect.create(
-			this.x + this.width,
+			this.xCamera + this.width,
 			this.y + this.height - this.limbWidth,
 			this.limbHeight,
 			this.limbWidth,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawBrokenRightArm() {
 		Rect.create(
-			this.xMid,
+			this.xCameraMid,
 			this.y + this.height - this.limbWidth,
 			this.limbHeight,
 			this.limbWidth,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawBrokenLeftArm() {
 		Rect.create(
-			this.xMid - 0.5 * this.bodyWidth - this.limbWidth,
+			this.xCameraMid - 0.5 * this.bodyWidth - this.limbWidth,
 			this.y + this.height - this.limbWidth,
 			this.limbHeight,
 			this.limbWidth,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawBrokenHelmetVisor() {
 		Rect.create(
-			this.x + this.width - 0.7 * this.headRadius,
+			this.xCamera + this.width - 0.7 * this.headRadius,
 			this.y + this.height - 1.4 * this.headRadius,
 			1.4 * this.headRadius,
 			1.4 * this.headRadius,
 			this.borderColor,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawBrokenHead() {
-		context.fillStyle = this.color;
-		context.strokeStyle = this.borderColor;
-		context.beginPath();
-		context.arc(
-			this.x + this.width,
+		this.context.fillStyle = this.color;
+		this.context.strokeStyle = this.borderColor;
+		this.context.beginPath();
+		this.context.arc(
+			this.xCamera + this.width,
 			this.y + this.height - this.headRadius,
 			this.headRadius,
 			0,
 			Math.PI * 2,
 			true
 		);
-		context.fill();
-		context.stroke();
+		this.context.fill();
+		this.context.stroke();
 	}
 	drawBrokenBody() {
 		Rect.create(
-			this.x,
+			this.xCamera,
 			this.y + this.height - this.bodyHeight,
 			this.bodyWidth,
 			this.bodyHeight,
 			this.color,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawBrokenThrustersPack() {
 		Rect.create(
-			this.xMid - 0.5 * this.backpackWidth,
+			this.xCameraMid - 0.5 * this.backpackWidth,
 			this.y + this.height - this.backpackHeight,
 			this.backpackWidth,
 			this.backpackHeight,
 			this.backpackColor,
+			this.context,
 			this.borderColor,
 			this.borderWidth
 		).draw();
 	}
 	drawBroken() {
-		if (thrusterPack.isFound) this.drawBrokenThrustersPack();
+		if (this.hasThrusterPack) this.drawBrokenThrustersPack();
 		this.drawBrokenBody();
 		this.drawBrokenHead();
 		this.drawBrokenHelmetVisor();
