@@ -14,7 +14,7 @@
 				display: block;
 				background-color: "black";
 			}
-			#game-info {
+			#all-info {
 				position: absolute;
 				top: 1em;
 				left: 1em;
@@ -29,24 +29,25 @@
 		<script defer src="character_class.js"></script>
 		<script defer src="extract_canvas.js"></script>
 		<script defer src="handle_keys.js"></script>
-		<script defer src="configs.js"></script>
+		<script defer src="initialize_configs.js"></script>
 		<script defer src="initialize_graphics_elements.js"></script>
+		<script defer src="resize_graphics_elements.js"></script>
 		<script defer src="draw.js"></script>
 	</head>
 
 	<body>
-		<par id="game-info">
+		<par id="all-info">
 			<div
 				id="help-info"
 				data-helpKeyText="h: Help"
-				data-helpText="Mission: collect the Oxygen pack<br>-----<br>Keys<br>c: clear this message<br>a: left<br>d: right<br>w: jump<br>Arrows unlocked if thrusters pack is collected.<br>-----"
+				data-helpText="Mission<br>1) Collect the oxygen packs<br>2) Reach the flag location<br>-----<br>Keys (low caps)<br>h: Show this message<br>c: Clear this message<br>a: Left<br>d: Right<br>w: Jump (SHORT/LONG press for LOW/HIGH jump)<br>Arrows unlocked if thrusters pack is collected.<br>-----"
 			>
 			h: Help
 			</div>
-			<div id="key-info">
-			</div>
-			<div id="collectable-info">
-			</div>	
+			<div id="key-info"></div>
+			<div id="collectable-info"></div>
+			<div id="lives-info"></div>
+			<div id="game-info"></div>	
 		</par>
 		<canvas id="canvas2D"></canvas>
 	</body>

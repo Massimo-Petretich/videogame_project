@@ -1,4 +1,6 @@
 function initializeGraphicsElements() {
+	const context = document.getElementById("canvas2D").getContext("2d");
+
 	window.graphicsElements = {};
 	window.graphicsElements.background = {};
 
@@ -6,7 +8,7 @@ function initializeGraphicsElements() {
 		window.configs.starsParams,
 		window.configs.starsColor,
 		window.configs.starsSpeed,
-		window.context
+		context
 	);
 	window.graphicsElements.background.planet = new Planet(
 		window.configs.planetX,
@@ -14,7 +16,7 @@ function initializeGraphicsElements() {
 		window.configs.planetSize,
 		window.configs.planetColor,
 		window.configs.planetSpeed,
-		window.context
+		context
 	);
 
 	window.graphicsElements.background.floors = new Floors(
@@ -23,7 +25,7 @@ function initializeGraphicsElements() {
 		window.configs.floorsHeight,
 		window.configs.floorsTopSideColor,
 		window.configs.floorsFrontSideColor,
-		window.context,
+		context,
 		window.configs.floorsFrontSideHeightProp,
 		window.configs.floorsBorderColor,
 		window.configs.floorsBorderWidth
@@ -36,7 +38,7 @@ function initializeGraphicsElements() {
 		window.configs.treesStemColor,
 		window.configs.treesCanopyColor,
 		window.configs.treesBorderColor,
-		window.context
+		context
 	);
 	window.graphicsElements.background.mountain = new Mountain(
 		window.configs.mountainXCoordinates.start,
@@ -46,12 +48,22 @@ function initializeGraphicsElements() {
 		window.configs.mountainHeight,
 		window.configs.mountainColor,
 		window.configs.mountainBorderColor,
-		window.context
+		context
 	);
 	window.graphicsElements.background.clouds = new Clouds(
 		window.configs.cloudsParams,
 		window.configs.cloudsColor,
-		window.context
+		context
+	);
+	window.graphicsElements.background.flag = new Flag(
+		window.configs.flagX,
+		window.configs.flagPoleHeight,
+		window.configs.flagPoleWidth,
+		window.configs.flagWidth,
+		window.configs.flagHeight,
+		window.configs.flagPoleColor,
+		window.configs.flagColor,
+		context
 	);
 
 	window.graphicsElements.background.holes = new Holes(
@@ -67,7 +79,7 @@ function initializeGraphicsElements() {
 		window.configs.characterBackpackColor,
 		window.configs.characterBorderColor,
 		window.configs.characterBorderWidth,
-		window.context
+		context
 	);
 
 	window.graphicsElements.collectables.oxygenPacks = new OxygenPacks(
@@ -77,7 +89,7 @@ function initializeGraphicsElements() {
 		window.configs.oxygenPacksColor,
 		window.configs.textColor,
 		window.configs.oxygenPacksBorderColor,
-		window.context,
+		context,
 		window.configs.oxygenPacksBorderWidth,
 		window.configs.oxygenPacksJittering
 	);
@@ -88,7 +100,8 @@ function initializeGraphicsElements() {
 		window.configs.characterWidth,
 		window.configs.characterHeight,
 		window.configs.characterColor,
-		window.context,
+		context,
+		window.configs.characterLives,
 		window.configs.characterBorderColor,
 		window.configs.characterBorderWidth,
 		window.configs.characterBackpackColor
@@ -96,23 +109,3 @@ function initializeGraphicsElements() {
 }
 
 initializeGraphicsElements();
-
-function resizeGraphicsElements() {
-	const thrusterPackIsFound =
-		window.graphicsElements.collectables.thrusterPack.isFound;
-	const oxygenPacksFoundCount =
-		window.graphicsElements.collectables.oxygenPacks.foundCount;
-	const cameraXprop =
-		window.gameSession.cameraXCoordinate / window.configs.gameCanvasWidth;
-
-	initializeConfigs()
-	initializeGraphicsElements();
-
-	window.graphicsElements.collectables.thrusterPack.isFound =
-		thrusterPackIsFound;
-	window.graphicsElements.collectables.oxygenPacks.foundCount =
-		oxygenPacksFoundCount;
-	window.gameSession.cameraXCoordinate =
-		cameraXprop * window.configs.gameCanvasWidth;
-}
-window.addEventListener("resize", resizeGraphicsElements);

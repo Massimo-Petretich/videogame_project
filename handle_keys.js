@@ -1,4 +1,4 @@
-let keys = {
+window.keys = {
 	isLeft: false,
 	isRight: false,
 	isJumping: false,
@@ -11,43 +11,47 @@ let keys = {
 };
 
 const handleKey = (event, status) => {
-	if (
-		window.gameSession.gameState === "game over" ||
-		window.gameSession.gameState === "game ended" ||
-		window.gameSession.gameState === "mission accomplished"
-	)
-		return null;
+	switch (window.gameSession.gameState) {
+		case "game over":
+			return null;
+		case "locked":
+			return null;
+		case "level completed":
+			return null;
+		case "tasks accomplished":
+			return null;
+	}
 
-	const element = document.getElementById("key-info")
+	const element = document.getElementById("key-info");
 	element.textContent = `Key: ${event.key}, Code: ${event.code}`;
 
 	switch (event.key) {
 		case "ArrowUp":
-			keys.isThrusterUp = status;
+			window.keys.isThrusterUp = status;
 			break;
 		case "ArrowLeft":
-			keys.isThrusterLeft = status;
+			window.keys.isThrusterLeft = status;
 			break;
 		case "ArrowRight":
-			keys.isThrusterRight = status;
+			window.keys.isThrusterRight = status;
 			break;
 		case "ArrowDown":
-			keys.isThrusterDown = status;
+			window.keys.isThrusterDown = status;
 			break;
 		case "w":
-			keys.isJumping = status;
+			window.keys.isJumping = status;
 			break;
 		case "a":
-			keys.isLeft = status;
+			window.keys.isLeft = status;
 			break;
 		case "d":
-			keys.isRight = status;
+			window.keys.isRight = status;
 			break;
 		case "h":
-			keys.isInfo = status;
+			window.keys.isInfo = status;
 			break;
 		case "c":
-			keys.isClearInfo = status;
+			window.keys.isClearInfo = status;
 			break;
 	}
 };

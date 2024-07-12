@@ -6,6 +6,7 @@ class Character {
 		height,
 		color,
 		context,
+		lives,
 		borderColor = color,
 		borderWidth = 0,
 		backpackColor = "#777777",
@@ -17,6 +18,7 @@ class Character {
 		this.width = width;
 		this.height = height;
 		this.color = color;
+		this.lives = lives;
 		this.context = context;
 		this.borderColor = borderColor;
 		this.borderWidth = borderWidth;
@@ -31,6 +33,7 @@ class Character {
 		this.shoeWidth = width * 0.15;
 		this.shoeHeight = height * 0.08;
 		this.canJump = true;
+		this.isPlummeting = false;
 		this.hasThrusterPack = hasThrusterPack;
 	}
 	get xCameraMid() {
@@ -59,15 +62,21 @@ class Character {
 		const yDist = this.yMid - y;
 		return Math.sqrt(xDist ** 2 + yDist ** 2);
 	}
-
+	xDist(x) {
+		const xDist = this.xCameraMid - x;
+		return Math.abs(xDist);
+	}
 	isBelowFloor() {
 		return this.y > window.configs.floorsY - this.height;
 	}
 	touchesFloor() {
-		return this.y + this.height == window.configs.floorsY;
+		return this.y + this.height === window.configs.floorsY;
 	}
-	touchesCanvasBottom() {
-		return this.y + this.height == window.innerHeight;
+	isbelowCanvasBottom() {
+		return this.y + this.height >= window.innerHeight;
+	}
+	stopOnCanvasBottom() {
+		this.y = window.innerHeight - this.height
 	}
 	isWithinXHole(hole) {
 		return (
@@ -80,12 +89,16 @@ class Character {
 			.map(this.isWithinXHole.bind(this))
 			.some((element) => element);
 	}
-	getBottom(holes) {
-		if (this.isWithinXHoles(holes)) return window.innerHeight;
-		return window.configs.floorsY;
-	};
-
-	updatePosition(holes) {
+	stopOnFloor() {
+		this.y = Math.min(this.y, window.configs.floorsY - this.height);
+	}
+	callNewLife() {
+		window.gameSession.cameraXCoordinate = 0;
+		this.y = window.configs.floorsY - this.height;
+		this.lives -= 1;
+		this.isPlummeting = false;
+	}
+	updatePosition(holes, keys) {
 		if (keys.isThrusterUp && this.hasThrusterPack)
 			this.y -= window.configs.speedUp;
 		if (keys.isThrusterDown && this.hasThrusterPack)
@@ -102,14 +115,14 @@ class Character {
 				}
 			}
 		}
-		//whenever released cannot jump unless touches the floor
-		if (!keys.isJumping) this.canJump = false;
-		//can jump again only if touches the floor
-		if (!this.canJump && this.touchesFloor()) this.canJump = true;
+
+		if (!keys.isJumping) this.canJump = false; //whenever released cannot jump unless touches the floor
+		if (!this.canJump && this.touchesFloor()) this.canJump = true; //can jump again only if touches the floor
 		this.y += window.configs.speedGravity;
-		this.y = Math.min(this.y, this.getBottom(holes) - this.height);
-		// this.y = Math.max(this.y, 0); // stop from going above canvas
-		// if (this.y <= 0) this.y += 0.2 * window.innerHeight; // bounce when touches top
+		const isWithinXHoles = this.isWithinXHoles(holes)
+		if (isWithinXHoles && this.isBelowFloor()) this.isPlummeting = true;
+		if (!isWithinXHoles && !this.isPlummeting) this.stopOnFloor();
+		if (this.y > window.innerHeight) this.callNewLife();
 	}
 
 	draw(position) {

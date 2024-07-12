@@ -12,17 +12,17 @@ window.gameSession = {
 		}
 	},
 	updateCameraXcoordinate() {
-		if (keys.isLeft)
+		if (window.keys.isLeft)
 			this.cameraXCoordinate -= window.configs.speedHorizontal;
-		if (keys.isRight)
+		if (window.keys.isRight)
 			this.cameraXCoordinate += window.configs.speedHorizontal;
 		if (
-			keys.isThrusterRight &&
+			window.keys.isThrusterRight &&
 			window.graphicsElements.collectables.thrusterPack.isFound
 		)
 			this.cameraXCoordinate += window.configs.speedHorizontal;
 		if (
-			keys.isThrusterLeft &&
+			window.keys.isThrusterLeft &&
 			window.graphicsElements.collectables.thrusterPack.isFound
 		)
 			this.cameraXCoordinate -= window.configs.speedHorizontal;
@@ -46,23 +46,12 @@ window.gameSession = {
 		document.getElementById("help-info").textContent = helpKeyText;
 	},
 	resetKeys() {
-		return Object.keys(keys).forEach((key) => (keys[key] = false));
+		return Object.keys(window.keys).forEach((key) => (window.keys[key] = false));
 	},
-	callGameOver() {
+	callGameState(state) {
 		this.resetKeys();
-		this.gameState = "game over";
-		document.getElementById("game-info").textContent = this.gameState;
-	},
-	callGameEnded() {
-		this.gameState = "game ended";
-		document.getElementById("game-info").textContent = this.gameState;
-		window.graphicsElements.character.draw("broken");
-		clearInterval(this.intervalId);
-	},
-	callMissionAccomplished() {
-		this.resetKeys();
-		this.gameState = "mission accomplished";
-		document.getElementById("game-info").textContent = this.gameState;
+		this.gameState = state;
+		document.getElementById("game-info").textContent = state;
 	},
 	updateDrawCollectable(collectable) {
 		collectable.updatePosition();
@@ -76,25 +65,54 @@ window.gameSession = {
 		if (dist > collectableSize) return null;
 		collectable.isFound = true;
 	},
-	updateCollectedCount() {
+	displayOxygenPacksCollectedCount() {
 		const infoStr =
 			"Collected items: " +
 			window.graphicsElements.collectables.oxygenPacks.foundCount +
 			"  of " +
-			window.graphicsElements.collectables.oxygenPacks.oxygenPacks.length;
-		const element = document.getElementById("collectable-info");
-		element.textContent = infoStr;
+			window.configs.oxygenPacksNpieces;
+		document.getElementById("collectable-info").textContent = infoStr;
+	},
+	displayLivesCount() {
+		const infoStr = "Lives: " + window.graphicsElements.character.lives;
+		document.getElementById("lives-info").textContent = infoStr;
+	},
+	updateFlagReached() {
+		const flagX = window.graphicsElements.background.flag.xCamera;
+		const dist = window.graphicsElements.character.xDist(flagX);
+		if (dist < 0.5 * window.graphicsElements.character.width) {
+			window.graphicsElements.background.flag.isReached = true;
+		} else {
+			window.graphicsElements.background.flag.isReached = false;
+		}
 	},
 	restoreCanvas() {
+		const context = document.getElementById("canvas2D").getContext("2d");
 		context.clearRect(0, 0, window.innerWidth, window.innerHeight);
 		context.fillStyle = window.configs.background;
 		context.fillRect(0, 0, window.innerWidth, window.innerHeight);
 	},
+	dealWithInterval() {
+		switch (this.gameState) {
+			case "game over":
+				clearInterval(this.intervalId);
+				break;
+			case "level completed":
+				clearInterval(this.intervalId);
+				break;
+		}
+	}
 };
 
+
+
 function drawCanvas() {
+	// general
 	window.gameSession.restoreCanvas();
 	window.gameSession.updateCameraXcoordinate();
+	window.gameSession.updateFlagReached();
+	window.gameSession.displayLivesCount();
+
 	// background graphic objects
 	for (let key in window.graphicsElements.background) {
 		let element = window.graphicsElements.background[key];
@@ -112,52 +130,63 @@ function drawCanvas() {
 	window.graphicsElements.collectables.oxygenPacks.oxygenPacks.map(
 		window.gameSession.updateDrawCollectable
 	);
-
-	if (window.gameSession.gameState === "running")
-		window.gameSession.updateCollectedCount();
+	window.gameSession.displayOxygenPacksCollectedCount();
 
 	// game states
-	if (keys.isInfo && window.gameSession.gameState !== "help")
+	if (window.keys.isInfo && window.gameSession.gameState !== "help")
 		window.gameSession.showHelp();
-	if (keys.isClearInfo && window.gameSession.gameState === "help")
+	if (window.keys.isClearInfo && window.gameSession.gameState === "help")
 		window.gameSession.removeHelp();
 
 	if (
 		window.graphicsElements.collectables.oxygenPacks.foundCount ===
-		window.configs.oxygenPacksNpieces
+			window.configs.oxygenPacksNpieces &&
+		window.graphicsElements.background.flag.isReached
 	)
-		window.gameSession.callMissionAccomplished();
-
-	if (window.graphicsElements.character.touchesCanvasBottom()) {
-		window.gameSession.callGameEnded();
-		return null;
-	}
+		window.gameSession.callGameState('tasks accomplished');
+	
 	if (
-		window.graphicsElements.character.isWithinXHoles(
-			window.graphicsElements.background.holes.holes
-		) &&
-		window.graphicsElements.character.isBelowFloor()
+		window.gameSession.gameState === "tasks accomplished" &&
+		window.graphicsElements.character.touchesFloor()
 	)
-		window.gameSession.callGameOver();
+		window.gameSession.callGameState('level completed');
+
+	if (
+		window.graphicsElements.character.lives === 0 &&
+		window.graphicsElements.character.isPlummeting
+	)
+		window.gameSession.callGameState('locked');
+	if (
+		window.graphicsElements.character.lives === 0 && 
+		window.gameSession.gameState === "locked" &&
+		window.graphicsElements.character.isbelowCanvasBottom()
+	)
+		window.gameSession.callGameState('game over');
+	
+	
 
 	// character
 	window.graphicsElements.character.updatePosition(
-		window.graphicsElements.background.holes.holes
+		window.graphicsElements.background.holes.holes, 
+		window.keys
 	);
 
-	if (window.graphicsElements.character.touchesFloor()) {
-		if (keys.isRight) {
+	if (window.gameSession.gameState === "game over") {
+		window.graphicsElements.character.stopOnCanvasBottom()
+		window.graphicsElements.character.draw("broken");
+	} else if (window.graphicsElements.character.touchesFloor()) {
+		if (window.keys.isRight) {
 			window.graphicsElements.character.draw("walkingRight");
-		} else if (keys.isLeft) {
+		} else if (window.keys.isLeft) {
 			window.graphicsElements.character.draw("walkingLeft");
 		} else if (
 			window.graphicsElements.collectables.thrusterPack.isFound &&
-			keys.isThrusterLeft
+			window.keys.isThrusterLeft
 		) {
 			window.graphicsElements.character.draw("jumpingLeft");
 		} else if (
 			window.graphicsElements.collectables.thrusterPack.isFound &&
-			keys.isThrusterRight
+			window.keys.isThrusterRight
 		) {
 			window.graphicsElements.character.draw("jumpingRight");
 		} else {
@@ -165,23 +194,24 @@ function drawCanvas() {
 		}
 	} else {
 		if (
-			keys.isLeft ||
+			window.keys.isLeft ||
 			(window.graphicsElements.collectables.thrusterPack.isFound &&
-				keys.isThrusterLeft)
+				window.keys.isThrusterLeft)
 		) {
 			window.graphicsElements.character.draw("jumpingLeft");
 		} else if (
-			keys.isRight ||
+			window.keys.isRight ||
 			(window.graphicsElements.collectables.thrusterPack.isFound &&
-				keys.isThrusterRight)
+				window.keys.isThrusterRight)
 		) {
 			window.graphicsElements.character.draw("jumpingRight");
-		} else if (keys.isJumping || keys.isThrusterUp) {
+		} else if (window.keys.isJumping || window.keys.isThrusterUp) {
 			window.graphicsElements.character.draw("jumpingFacingForward");
 		} else {
 			window.graphicsElements.character.draw("facingForward");
 		}
 	}
+	window.gameSession.dealWithInterval()
 }
 
 window.gameSession.intervalId = setInterval(
