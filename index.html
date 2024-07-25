@@ -22,32 +22,45 @@
 				border-radius: 0.3em;
 			}
 		</style>
-		<script
-			defer
-			src="graphics_elements_classes_except_character.js"
-		></script>
-		<script defer src="character_class.js"></script>
-		<script defer src="extract_canvas.js"></script>
-		<script defer src="handle_keys.js"></script>
-		<script defer src="initialize_configs.js"></script>
-		<script defer src="initialize_graphics_elements.js"></script>
-		<script defer src="resize_graphics_elements.js"></script>
-		<script defer src="draw.js"></script>
+		<script defer src="scripts/GraphicElement.js"></script>
+		<script defer src="scripts/Rect.js"></script>
+		<script defer src="scripts/Cloud.js"></script>
+		<script defer src="scripts/Floor.js"></script>
+		<script defer src="scripts/Enemy.js"></script>
+		<script defer src="scripts/Flag.js"></script>
+		<script defer src="scripts/Holes.js"></script>
+		<script defer src="scripts/Mountain.js"></script>
+		<script defer src="scripts/OxygenPack.js"></script>
+		<script defer src="scripts/Planet.js"></script>
+		<script defer src="scripts/Star.js"></script>
+		<script defer src="scripts/ThrustersPack.js"></script>
+		<script defer src="scripts/Tree.js"></script>
+		<script defer src="scripts/Character.js"></script>
+
+		<script defer src="scripts/extract_canvas.js"></script>
+		<script defer src="scripts/handle_keys.js"></script>
+		<script defer src="scripts/initialize_configs.js"></script>
+		<script defer src="scripts/initialize_graphics_elements.js"></script>
+		<script defer src="scripts/resize_graphics_elements.js"></script>
+		<script defer src="scripts/play_sound.js"></script>
+		<script defer src="scripts/draw.js"></script>
 	</head>
 
 	<body>
 		<par id="all-info">
 			<div
 				id="help-info"
-				data-helpKeyText="h: Help"
-				data-helpText="Mission<br>1) Collect the oxygen packs<br>2) Reach the flag location<br>-----<br>Keys (low caps)<br>h: Show this message<br>c: Clear this message<br>a: Left<br>d: Right<br>w: Jump (SHORT/LONG press for LOW/HIGH jump)<br>Arrows unlocked if thrusters pack is collected.<br>-----"
+				data-helpKeyText="h: Help / c: clear"
+				data-helpText="Mission<br>1) Collect the oxygen packs<br>2) Reach the flag location (before the oxygen runs out)<br>-----<br>Rules<br>1) Thrusters available if collected<br>2) Thrusters fill level depletes with usage<br>3) Oxygen level decreases over time and is depleted faster while running and jumping<br>4) Collectable oxygen packs partially refill the oxygen level<br>5) Lives are lost when hit by enemies or fallen from the floor<br>6) No jumping/thrusting from below the platforms<br>7) Character can move indefinitely left and rignt<br>-----<br>Game over<br>1) Run out of oxygen<br>2) Ended lives.<br>-----<br>Keys (low caps)<br>h: Show this message<br>c: Clear this message<br>a: Left<br>d: Right<br>w: Jump <br>Arrows: Unlocked if thrusters pack is collected.<br>-----"
 			>
-			h: Help
+				h: Help / c: clear
 			</div>
 			<div id="key-info"></div>
 			<div id="collectable-info"></div>
 			<div id="lives-info"></div>
-			<div id="game-info"></div>	
+			<div id="thrusterPack-info"></div>
+			<div id="characterOxygen-info"></div>
+			<div id="game-info"></div>
 		</par>
 		<canvas id="canvas2D"></canvas>
 	</body>
