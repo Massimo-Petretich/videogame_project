@@ -6,7 +6,6 @@ class Character {
 		height,
 		color,
 		context,
-		lives,
 		borderColor = color,
 		borderWidth = 0,
 		backpackColor = "#777777",
@@ -18,7 +17,6 @@ class Character {
 		this.width = width;
 		this.height = height;
 		this.color = color;
-		this.lives = lives;
 		this.context = context;
 		this.borderColor = borderColor;
 		this.borderWidth = borderWidth;
@@ -113,14 +111,6 @@ class Character {
 	get touchesPlatform() {
 		return this.y + this.height === window.configs.platformsY;
 	}
-	callNewLife() {
-		window.gameSession.cameraXCoordinate = 0;
-		this.y = window.configs.floorsY - this.height;
-		this.lives -= 1;
-		this.isPlummeting = false;
-		window.gameSession.callGameState("running");
-		playSound("lost life");
-	}
 	updatePosition(holes, platforms, keys) {
 		const isWithinXPlatforms = this.isWithinXPlatforms(platforms);
 		const isAbovePlatform = this.isAbovePlatform;
@@ -142,7 +132,7 @@ class Character {
 			!this.isPlummeting &&
 			!(!isAbovePlatform && isWithinXPlatforms)
 		) {
-			playSound("jump");
+			window.gameSession.playSound("jump");
 			window.gameSession.decrementOxygenLevel(
 				window.configs.characterOxygenLevelDecrementJump
 			);
@@ -151,14 +141,13 @@ class Character {
 		}
 		if (!this.canJump && (this.touchesFloor || this.touchesPlatform)) {
 			this.canJump = true; //can jump again only if touches the floor
-			playSound("jumpLand");
+			window.gameSession.playSound("jumpLand");
 		}
 		this.y += window.configs.speedGravity;
 		const isWithinXHoles = this.isWithinXHoles(holes);
 		if (isWithinXHoles && this.isBelowFloor) this.isPlummeting = true;
 		if (!isWithinXHoles && !this.isPlummeting) this.stopOnFloor();
 		if (isWithinXPlatforms && isAbovePlatform) this.stopOnPlatform();
-		if (this.y > window.innerHeight) this.callNewLife();
 	}
 
 	draw(position) {

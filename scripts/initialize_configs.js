@@ -1,6 +1,7 @@
 function initializeConfigs() {
 	window.configs = {
 		// general
+		lives: 2,
 		refreshRate: 60,
 		background: "#000000",
 		gameCanvases: 5,
@@ -10,7 +11,6 @@ function initializeConfigs() {
 		textColor: "red",
 
 		// character
-		characterLives: 2,
 		characterColor: "#FFFFFF",
 		characterBorderColor: "#000000",
 		characterBorderWidth:

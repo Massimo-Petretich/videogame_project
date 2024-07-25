@@ -16,4 +16,5 @@ function resizeGraphicsElements() {
 	window.gameSession.cameraXCoordinate =
 		cameraXprop * window.configs.gameCanvasWidth;
 }
+
 window.addEventListener("resize", resizeGraphicsElements);

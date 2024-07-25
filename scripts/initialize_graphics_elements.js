@@ -120,7 +120,6 @@ function initializeGraphicsElements() {
 		window.configs.characterHeight,
 		window.configs.characterColor,
 		context,
-		window.configs.characterLives,
 		window.configs.characterBorderColor,
 		window.configs.characterBorderWidth,
 		window.configs.characterBackpackColor
