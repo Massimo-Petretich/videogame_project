@@ -77,6 +77,9 @@ class Character {
 	get isbelowCanvasBottom() {
 		return this.y + this.height >= window.innerHeight;
 	}
+	get isAboveCanvasTop() {
+		return this.y <= 0;
+	}
 	stopOnCanvasBottom() {
 		this.y = window.innerHeight - this.height;
 	}
@@ -144,6 +147,7 @@ class Character {
 			window.gameSession.playSound("jumpLand");
 		}
 		this.y += window.configs.speedGravity;
+		if (this.isAboveCanvasTop) this.y = 0;
 		const isWithinXHoles = this.isWithinXHoles(holes);
 		if (isWithinXHoles && this.isBelowFloor) this.isPlummeting = true;
 		if (!isWithinXHoles && !this.isPlummeting) this.stopOnFloor();
