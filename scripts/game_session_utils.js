@@ -1,9 +1,8 @@
 window.gameSession = {
-
 	gameState: "running",
 	cameraXCoordinate: 0,
 	lives: window.configs.lives,
-	
+
 	resetKeys() {
 		return Object.keys(window.keys).forEach(
 			(key) => (window.keys[key] = false)
@@ -12,7 +11,7 @@ window.gameSession = {
 	callGameState(state) {
 		this.resetKeys();
 		this.gameState = state;
-		document.getElementById("game-info").textContent = state;
+		this.displayGameState();
 	},
 	callNewLife() {
 		this.cameraXCoordinate = 0;
@@ -32,10 +31,10 @@ window.gameSession = {
 	},
 	dealWithInterval() {
 		switch (this.gameState) {
-			case "game over":
+			case "GAME OVER":
 				clearInterval(this.intervalId);
 				break;
-			case "level completed":
+			case "LEVEL COMPLETED":
 				clearInterval(this.intervalId);
 				break;
 		}
@@ -62,10 +61,10 @@ window.gameSession = {
 			case "collect":
 				audio = new Audio("sounds/collected.mp3");
 				break;
-			case "game over":
+			case "GAME OVER":
 				audio = new Audio("sounds/game_over.mp3");
 				break;
-			case "level completed":
+			case "LEVEL COMPLETED":
 				audio = new Audio("sounds/level_completed.wav");
 				break;
 			case "lost life":
@@ -179,15 +178,22 @@ window.gameSession = {
 			window.configs.oxygenPacksNpieces;
 		document.getElementById("collectable-info").textContent = infoStr;
 	},
+	displayGameState() {
+		const infoStr = "Game state: " + this.gameState;
+		document.getElementById("game-info").textContent = infoStr;
+	},
 	displayLivesCount() {
 		const infoStr = "Lives: " + this.lives;
 		document.getElementById("lives-info").textContent = infoStr;
 	},
 	displayOxygenLevel() {
-		const infoStr =
-			"Character oxygen level: " +
-			Math.round(window.graphicsElements.character.oxygenLevel) +
-			"  %";
+		let oxygenLevel = window.graphicsElements.character.oxygenLevel;
+		let infoStr =
+			"Character oxygen level: " + Math.round(oxygenLevel) + "  %";
+		if (oxygenLevel <= 0) {
+			oxygenLevel = 0;
+			infoStr += " --> RUN OUT OF OXYGEN";
+		}
 		document.getElementById("characterOxygen-info").textContent = infoStr;
 	},
 	displayThrustePackFill() {

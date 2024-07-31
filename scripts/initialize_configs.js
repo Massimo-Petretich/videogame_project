@@ -84,7 +84,7 @@ function initializeConfigs() {
 		},
 
 		// floor
-		floorsNPieces: 4,
+		floorsNPieces: 6,
 		floorsWidthProp: 0.8,
 		floorsYProp: 0.7,
 		floorsHeightProp: 0.07,

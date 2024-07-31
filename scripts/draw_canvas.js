@@ -5,11 +5,11 @@ function updateGameFrame() {
 	window.gameSession.updateFlagReached();
 	window.gameSession.displayLivesCount();
 	window.gameSession.displayThrustePackFill();
-	window.gameSession.displayOxygenLevel();
 	window.gameSession.decrementOxygenLevel(
 		//default oxygen consumption
 		window.configs.characterOxygenLevelDecrement
 	);
+	window.gameSession.displayOxygenLevel();
 
 	// background graphic objects
 	for (let key in window.graphicsElements.background) {
@@ -50,7 +50,7 @@ function updateGameFrame() {
 		window.gameSession.gameState === "tasks accomplished" &&
 		window.graphicsElements.character.touchesFloor
 	)
-		window.gameSession.callGameState("level completed");
+		window.gameSession.callGameState("LEVEL COMPLETED");
 
 	if (window.graphicsElements.character.isPlummeting)
 		window.gameSession.callGameState("locked");
@@ -59,17 +59,17 @@ function updateGameFrame() {
 		window.gameSession.gameState === "locked" &&
 		window.graphicsElements.character.isbelowCanvasBottom
 	)
-		window.gameSession.callGameState("game over");
+		window.gameSession.callGameState("GAME OVER");
 
 	if (window.gameSession.lives < 0)
-		window.gameSession.callGameState("game over");
+		window.gameSession.callGameState("GAME OVER");
 
 	if (window.graphicsElements.character.oxygenLevel < 0)
-		window.gameSession.callGameState("game over");
+		window.gameSession.callGameState("GAME OVER");
 
 	if (
-		window.gameSession.gameState === "level completed" ||
-		window.gameSession.gameState === "game over"
+		window.gameSession.gameState === "LEVEL COMPLETED" ||
+		window.gameSession.gameState === "GAME OVER"
 	)
 		window.gameSession.playSound(window.gameSession.gameState);
 
@@ -83,7 +83,7 @@ function updateGameFrame() {
 		window.keys
 	);
 
-	if (window.gameSession.gameState === "game over") {
+	if (window.gameSession.gameState === "GAME OVER") {
 		window.graphicsElements.character.stopOnCanvasBottom();
 		window.graphicsElements.character.draw("broken");
 	} else if (
